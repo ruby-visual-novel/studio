@@ -146,14 +146,22 @@
 <div id="readerView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
     <div class="flex items-center justify-between mb-2">
         <button onclick="backToDetail()" class="text-sm text-red-500 font-medium flex items-center hover:underline">← กลับไปหน้ารายชื่อตอน</button>
-        <span id="readerEpisodeTitle" class="text-xs font-semibold text-zinc-400"></span>
+        <div class="flex items-center gap-2">
+            <span id="readerEpisodeTitle" class="text-xs font-semibold text-zinc-400"></span>
+            <!-- ปุ่มปรับขนาดตัวอักษร (ข้อ 1) -->
+            <div class="flex items-center bg-zinc-800 rounded-lg p-0.5 border border-zinc-700 text-xs">
+                <button onclick="changeReaderFontSize('sm')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold" title="ตัวอักษรเล็ก">A-</button>
+                <button onclick="changeReaderFontSize('base')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold" title="ตัวอักษรปกติ">A</button>
+                <button onclick="changeReaderFontSize('lg')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold" title="ตัวอักษรใหญ่">A+</button>
+            </div>
+        </div>
     </div>
     
     <div class="bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[650px] relative border border-zinc-800">
         <div id="sceneBg" class="flex-1 bg-cover bg-center flex items-end justify-center pb-8 relative transition-all duration-500">
             <div class="text-center text-white bg-zinc-950/85 px-6 py-4 rounded-xl backdrop-blur-md max-w-[92%] border border-white/15 shadow-2xl">
                 <span id="charName" class="font-bold text-red-400 block text-left text-sm mb-1.5"></span> 
-                <span id="dialogueText" class="text-base sm:text-lg block text-left leading-relaxed"></span>
+                <span id="dialogueText" class="text-base sm:text-lg block text-left leading-relaxed transition-all"></span>
             </div>
         </div>
 
@@ -199,7 +207,6 @@
         <button onclick="goHome()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-2 rounded-lg cursor-pointer">← กลับหน้าแรก</button>
     </div>
 
-    <!-- ช่องค้นหา (แว่นขยาย) สำหรับแดชบอร์ดนักเขียนรายคน -->
     <div class="theme-card bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center gap-2">
         <span class="text-red-500 text-lg">🔍</span>
         <input type="text" id="searchWriterDashboardInput" onkeyup="renderWriterDashboardData()" placeholder="ค้นหาชื่อหรืออีเมลนักเขียนเพื่อดูแดชบอร์ดรายคน..." class="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
@@ -239,7 +246,6 @@
             </div>
         </div>
 
-        <!-- 💰 ระบบจัดการเบิกเงินของนักเขียน (เฉพาะแอดมินสูงสุด) -->
         <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 space-y-3">
             <h2 class="text-xl font-bold text-amber-400">💸 ระบบเบิกเงินนักเขียน (ดึงเงินคืน)</h2>
             <p class="text-xs text-zinc-400">กรอกอีเมลนักเขียนและจำนวนเงิน (บาท) เพื่อหักยอดรายได้/ถอนเงินออกเมื่อนักเขียนทำเรื่องเบิกเงิน</p>
@@ -451,7 +457,6 @@
             <p class="text-center text-sm mt-2"><button type="button" onclick="switchAuthTab('login')" class="text-red-400 underline">กลับไปเข้าสู่ระบบ</button></p>
         </form>
 
-        <!-- ฟอร์มกู้คืนรหัสผ่าน -->
         <form id="forgotForm" onsubmit="handleForgotPassword(event)" class="hidden space-y-4">
             <h2 class="text-xl font-bold text-center text-red-500">กู้คืนรหัสผ่าน</h2>
             <div>
@@ -593,17 +598,12 @@
         }
     }
 
+    // ฟังก์ชันบีบอัดภาพและตรวจสอบขนาด (ข้อ 4)
     function compressImageFile(file, maxWidth, quality, callback) {
-        // 🛡️ ป้องกันขนาดไฟล์ต้นฉบับเกิน 2MB ตั้งแต่ตอนเลือกไฟล์เพื่อไม่ให้กินพื้นที่ฐานข้อมูล
         const maxSizeMB = 2;
         if (file.size > maxSizeMB * 1024 * 1024) {
             alert(`⚠️ ไฟล์รูปภาพมีขนาดใหญ่เกินไป (${(file.size / (1024 * 1024)).toFixed(2)} MB)\nกรุณาเลือกไฟล์ที่มีขนาดไม่เกิน ${maxSizeMB} MB เพื่อป้องกันฐานข้อมูลเต็มครับ`);
             return;
-        }
-
-        // แจ้งเตือนนักเขียนเบื้องต้นหากไฟล์มีขนาดค่อนข้างใหญ่
-        if (file.size > 1 * 1024 * 1024) {
-            console.log("ℹ️ กำลังบีบอัดรูปภาพขนาดใหญ่เพื่อให้เหมาะกับการเก็บบนระบบ...");
         }
 
         const reader = new FileReader();
@@ -614,7 +614,6 @@
                 let width = img.width;
                 let height = img.height;
 
-                // ลดความกว้างสูงสุดลงเหลือ 600px เพื่อให้ Base64 มีขนาดเล็กมากๆ (ปลอดภัยต่อ 1MB Limit ของ Firestore)
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
                     width = maxWidth;
@@ -625,13 +624,11 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // บีบอัดคุณภาพลงเหลือ 70% เพื่อให้ขนาดไฟล์หลังแปลงเป็น Base64 มีขนาดไม่เกินไม่กี่ร้อย KB
                 const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
                 
-                // 🔍 ตรวจสอบขนาด Base64 สุดท้ายก่อนส่งคืน
                 const base64SizeInKB = Math.round((compressedBase64.length * 3) / 4 / 1024);
-                if (base64SizeInKB > 800) {
-                    alert("⚠️ รูปภาพนี้มีความซับซ้อนสูง ทำให้ขนาดหลังบีบอัดยังใหญ่เกินไป แนะนำให้ใช้รูปภาพอื่นครับ");
+                if (base64SizeInKB > 900) {
+                    alert("⚠️ รูปภาพนี้มีความซับซ้อนสูง ทำให้ขนาดหลังบีบอัดยังใหญ่เกินไป แนะนำให้ใช้รูปภาพขนาดเล็กลงครับ");
                     return;
                 }
 
@@ -1252,6 +1249,15 @@
     let currentSceneIndex = 0;
     let currentScenes = [];
 
+    // ฟังก์ชันปรับขนาดตัวอักษรกล่องบทสนทนา (ข้อ 1)
+    function changeReaderFontSize(size) {
+        const textEl = document.getElementById('dialogueText');
+        textEl.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
+        if (size === 'sm') textEl.classList.add('text-sm', 'sm:text-base');
+        else if (size === 'base') textEl.classList.add('text-base', 'sm:text-lg');
+        else if (size === 'lg') textEl.classList.add('text-lg', 'sm:text-xl');
+    }
+
     function startReadingEpisode(novelId, epId, resumeIndex = 0, skipPayment = false) {
         const novel = getNovels().find(n => n.id === novelId);
         if (!novel) return;
@@ -1442,6 +1448,7 @@
     function getReadingHistory() { const key = getUserStorageKey('history'); return key ? JSON.parse(localStorage.getItem(key) || '[]') : []; }
     function saveReadingHistory(data) { const key = getUserStorageKey('history'); if (key) localStorage.setItem(key, JSON.stringify(data)); }
 
+    // ระบบบันทึกจุดที่อ่านค้างอัตโนมัติ (ข้อ 1)
     function recordReadingProgress() {
         const email = getCurrentEmail();
         if (!email || !activeNovelId || !activeEpisodeId) return;
@@ -1469,8 +1476,8 @@
                     <img src="${novel.cover}" class="w-20 h-24 object-cover rounded-lg">
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-sm">${novel.title}</h3>
-                        <p class="text-xs text-zinc-400 mt-1">${item.episodeTitle}</p>
-                        <button onclick="resumeReading('${item.novelId}', '${item.episodeId}', ${item.sceneIndex})" class="mt-2 bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">อ่านต่อ</button>
+                        <p class="text-xs text-zinc-400 mt-1">${item.episodeTitle} (ฉากที่ ${item.sceneIndex + 1})</p>
+                        <button onclick="resumeReading('${item.novelId}', '${item.episodeId}', ${item.sceneIndex})" class="mt-2 bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">อ่านต่อจากจุดเดิม</button>
                     </div>
                 </div>
             `;
@@ -1911,40 +1918,72 @@
         document.getElementById('episodeEditorModal').classList.remove('hidden');
     }
 
+    // ฟังก์ชันเรนเดอร์ฉาก พร้อมปุ่มจัดเรียง (🔼 🔽) และตัวนับคำ (ข้อ 2)
     function renderSceneBlocks() {
         const container = document.getElementById('scenesContainer');
         if (!tempScenes || tempScenes.length === 0) {
             tempScenes = [{ bg: "", charName: "ตัวละครเอก", text: "", hasChoice: false }];
         }
-        container.innerHTML = tempScenes.map((scene, i) => `
-            <div class="border border-zinc-800 rounded-xl p-3.5 bg-zinc-950 space-y-2">
-                <div class="flex justify-between items-center"><span class="bg-red-800 text-white text-xs font-bold px-2 py-0.5 rounded">ฉากที่ ${i + 1}</span>${tempScenes.length > 1 ? `<button type="button" onclick="removeSceneBlock(${i})" class="text-xs text-red-400 font-medium cursor-pointer">ลบ</button>` : ''}</div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input type="text" value="${escapeHtml(scene.charName || '')}" oninput="updateTempScene(${i}, 'charName', this.value)" placeholder="ชื่อตัวละคร" class="px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
-                    
+        container.innerHTML = tempScenes.map((scene, i) => {
+            const textContent = scene.text || '';
+            const charCount = textContent.length;
+            const wordCount = textContent.trim() ? textContent.trim().split(/\s+/).length : 0;
+
+            return `
+                <div class="border border-zinc-800 rounded-xl p-3.5 bg-zinc-950 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-red-800 text-white text-xs font-bold px-2 py-0.5 rounded">ฉากที่ ${i + 1}</span>
+                            <!-- ปุ่มเลื่อนลำดับฉากขึ้น/ลง (ข้อ 2) -->
+                            <div class="flex gap-0.5 bg-zinc-900 rounded border border-zinc-700">
+                                <button type="button" onclick="moveScene(${i}, -1)" ${i === 0 ? 'disabled class="opacity-30 cursor-not-allowed px-1.5 py-0.5 text-xs text-zinc-300"' : 'class="px-1.5 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800 cursor-pointer"'}>🔼</button>
+                                <button type="button" onclick="moveScene(${i}, 1)" ${i === tempScenes.length - 1 ? 'disabled class="opacity-30 cursor-not-allowed px-1.5 py-0.5 text-xs text-zinc-300"' : 'class="px-1.5 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800 cursor-pointer"'}>🔽</button>
+                            </div>
+                        </div>
+                        ${tempScenes.length > 1 ? `<button type="button" onclick="removeSceneBlock(${i})" class="text-xs text-red-400 font-medium cursor-pointer">ลบฉาก</button>` : ''}
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <input type="text" value="${escapeHtml(scene.charName || '')}" oninput="updateTempScene(${i}, 'charName', this.value)" placeholder="ชื่อตัวละคร" class="px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
+                        
+                        <div class="space-y-1">
+                            <div class="flex gap-1 items-center">
+                                <input type="text" value="${escapeHtml(scene.bg || '')}" oninput="updateTempScene(${i}, 'bg', this.value); previewSceneBgInput(${i}, this.value)" id="sceneBgInput_${i}" placeholder="วางลิงก์ URL หรือเลือกไฟล์..." class="flex-1 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
+                                <input type="file" id="sceneBgFile_${i}" accept="image/*" onchange="handleSceneFileUpload(event, ${i})" class="hidden">
+                                <button type="button" onclick="document.getElementById('sceneBgFile_${i}').click()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 rounded font-medium whitespace-nowrap cursor-pointer">📁 เลือกไฟล์</button>
+                            </div>
+                            <div id="sceneBgPreview_${i}" class="${scene.bg ? '' : 'hidden'} mt-1">
+                                <img src="${scene.bg || ''}" class="w-16 h-10 object-cover rounded border border-zinc-700" id="sceneBgImg_${i}">
+                            </div>
+                        </div>
+                    </div>
                     <div class="space-y-1">
-                        <div class="flex gap-1 items-center">
-                            <input type="text" value="${escapeHtml(scene.bg || '')}" oninput="updateTempScene(${i}, 'bg', this.value); previewSceneBgInput(${i}, this.value)" id="sceneBgInput_${i}" placeholder="วางลิงก์ URL หรือเลือกไฟล์..." class="flex-1 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
-                            <input type="file" id="sceneBgFile_${i}" accept="image/*" onchange="handleSceneFileUpload(event, ${i})" class="hidden">
-                            <button type="button" onclick="document.getElementById('sceneBgFile_${i}').click()" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 rounded font-medium whitespace-nowrap cursor-pointer">📁 เลือกไฟล์</button>
-                        </div>
-                        <div id="sceneBgPreview_${i}" class="${scene.bg ? '' : 'hidden'} mt-1">
-                            <img src="${scene.bg || ''}" class="w-16 h-10 object-cover rounded border border-zinc-700" id="sceneBgImg_${i}">
+                        <textarea rows="2" oninput="updateTempScene(${i}, 'text', this.value)" placeholder="บทสนทนา" class="w-full px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">${escapeHtml(scene.text || '')}</textarea>
+                        <!-- ตัวนับจำนวนคำและตัวอักษรเรียลไทม์ (ข้อ 2) -->
+                        <div class="text-[10px] text-zinc-500 text-right">จำนวน: <span id="charCount_${i}">${charCount}</span> ตัวอักษร | <span id="wordCount_${i}">${wordCount}</span> คำ</div>
+                    </div>
+                    <div>
+                        <label class="inline-flex items-center cursor-pointer"><input type="checkbox" ${scene.hasChoice ? 'checked' : ''} onchange="toggleSceneChoice(${i}, this.checked)" class="rounded text-red-600"><span class="ml-2 text-xs font-semibold text-red-400">มีช้อยส์ให้เลือก (สูงสุด 4 ตัวเลือก)</span></label>
+                        <div class="${scene.hasChoice ? '' : 'hidden'} mt-2 space-y-2 bg-zinc-900 p-2.5 border border-zinc-800 rounded-lg">
+                            <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice1Text || '')}" oninput="updateTempScene(${i}, 'choice1Text', this.value)" placeholder="ช้อยส์ 1" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice1Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice1Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
+                            <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice2Text || '')}" oninput="updateTempScene(${i}, 'choice2Text', this.value)" placeholder="ช้อยส์ 2" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice2Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice2Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
+                            <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice3Text || '')}" oninput="updateTempScene(${i}, 'choice3Text', this.value)" placeholder="ช้อยส์ 3 (ไม่บังคับ)" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice3Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice3Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
+                            <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice4Text || '')}" oninput="updateTempScene(${i}, 'choice4Text', this.value)" placeholder="ช้อยส์ 4 (ไม่บังคับ)" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice4Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice4Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
                         </div>
                     </div>
                 </div>
-                <textarea rows="2" oninput="updateTempScene(${i}, 'text', this.value)" placeholder="บทสนทนา" class="w-full px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">${escapeHtml(scene.text || '')}</textarea>
-                <div>
-                    <label class="inline-flex items-center cursor-pointer"><input type="checkbox" ${scene.hasChoice ? 'checked' : ''} onchange="toggleSceneChoice(${i}, this.checked)" class="rounded text-red-600"><span class="ml-2 text-xs font-semibold text-red-400">มีช้อยส์ให้เลือก (สูงสุด 4 ตัวเลือก)</span></label>
-                    <div class="${scene.hasChoice ? '' : 'hidden'} mt-2 space-y-2 bg-zinc-900 p-2.5 border border-zinc-800 rounded-lg">
-                        <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice1Text || '')}" oninput="updateTempScene(${i}, 'choice1Text', this.value)" placeholder="ช้อยส์ 1" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice1Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice1Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
-                        <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice2Text || '')}" oninput="updateTempScene(${i}, 'choice2Text', this.value)" placeholder="ช้อยส์ 2" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice2Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice2Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
-                        <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice3Text || '')}" oninput="updateTempScene(${i}, 'choice3Text', this.value)" placeholder="ช้อยส์ 3 (ไม่บังคับ)" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice3Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice3Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
-                        <div class="flex gap-2"><input type="text" value="${escapeHtml(scene.choice4Text || '')}" oninput="updateTempScene(${i}, 'choice4Text', this.value)" placeholder="ช้อยส์ 4 (ไม่บังคับ)" class="flex-1 px-2 py-1 border border-zinc-700 bg-zinc-950 text-white rounded text-xs"><select onchange="updateTempScene(${i}, 'choice4Next', this.value)" class="border border-zinc-700 bg-zinc-950 text-white rounded text-xs">${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.choice4Next == idx ? 'selected' : ''}>ไปฉาก ${idx + 1}</option>`).join('')}</select></div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+    }
+
+    // ฟังก์ชันเลื่อนลำดับฉากขึ้น/ลง (ข้อ 2)
+    function moveScene(index, direction) {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= tempScenes.length) return;
+        const temp = tempScenes[index];
+        tempScenes[index] = tempScenes[targetIndex];
+        tempScenes[targetIndex] = temp;
+        renderSceneBlocks();
+        triggerAutosave();
     }
 
     function handleSceneFileUpload(event, index) {
@@ -1981,6 +2020,14 @@
     }
     function updateTempScene(i, field, val) { 
         tempScenes[i][field] = val; 
+        if (field === 'text') {
+            const charCountEl = document.getElementById(`charCount_${i}`);
+            const wordCountEl = document.getElementById(`wordCount_${i}`);
+            if (charCountEl && wordCountEl) {
+                charCountEl.innerText = val.length;
+                wordCountEl.innerText = val.trim() ? val.trim().split(/\s+/).length : 0;
+            }
+        }
         triggerAutosave(); 
     }
     function toggleSceneChoice(i, checked) { 
@@ -2230,9 +2277,6 @@
         }
     };
 
-    // --- ฟังก์ชันระบบการเงิน สิทธิ์ และคลาวด์เพิ่มเติมที่เพิ่มเข้ามา ---
-
-    // 1. เติม/หักเหรียญผู้ใช้ (ค้นหาจาก Email แล้วอัปเดตบน Firestore)
     window.updateUserCoinsCloud = async function(email, amount) {
         try {
             const usersRef = collection(window.db, "users");
@@ -2251,23 +2295,18 @@
 
             await updateDoc(targetRef, { coins: newCoins });
             
-            // หากเป็นผู้ใช้ปัจจุบัน ให้ซิงค์ค่าลงเครื่องทันที
             if (currentUserProfile && currentUserProfile.email === email) {
                 currentUserProfile.coins = newCoins;
                 localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
                 updateUIByAuth();
             }
-            console.log(`อัปเดตเหรียญให้ ${email} สำเร็จ (${newCoins} เหรียญ)`);
         } catch (error) {
             console.error("Error updating user coins:", error);
-            alert("เกิดข้อผิดพลาดในการอัปเดตเหรียญบนคลาวด์: " + error.message);
         }
     };
 
-    // 2. นักเขียนกดเบิกเงิน
     window.processAuthorWithdrawalCloud = async function(email, amountBaht) {
         try {
-            // บันทึกรายการถอนเงินลง Firestore Collection 'withdrawals'
             const wdRef = doc(collection(window.db, "withdrawals"));
             await setDoc(wdRef, {
                 id: wdRef.id,
@@ -2276,13 +2315,11 @@
                 timestamp: Date.now(),
                 time: new Date().toLocaleString('th-TH')
             });
-            console.log(`บันทึกการเบิกเงิน ${amountBaht} บาท ของ ${email} ลงคลาวด์สำเร็จ`);
         } catch (error) {
             console.error("Error processing withdrawal cloud:", error);
         }
     };
 
-    // 3. ผู้อ่านสมัครเป็นนักเขียน (หักเหรียญและเปลี่ยนสิทธิ์เป็นรออนุมัติ)
     window.requestAuthorCloud = async function(email, cost) {
         try {
             const user = window.auth.currentUser;
@@ -2316,7 +2353,6 @@
         }
     };
 
-    // 4. ผู้อ่านปลดล็อกตอนนิยาย
     window.unlockEpisodeCloud = async function(novel, episode) {
         try {
             const user = window.auth.currentUser;
@@ -2370,7 +2406,6 @@
         }
     };
 
-    // 5. ดึงรายชื่อนักเขียนที่รออนุมัติสำหรับหน้า Super Admin
     window.getPendingAuthorsCloud = async function() {
         try {
             const usersRef = collection(window.db, "users");
@@ -2402,7 +2437,6 @@
         }
     };
 
-    // 6. อัปเดตสิทธิ์บทบาทผู้ใช้
     window.updateAuthorRoleCloud = async function(email, newRole) {
         try {
             const usersRef = collection(window.db, "users");
@@ -2426,7 +2460,6 @@
         }
     };
 
-    // 7. จัดการรายชื่อแอดมินทั่วไป
     window.getAdminManagementListCloud = async function() {
         try {
             const usersRef = collection(window.db, "users");
@@ -2465,7 +2498,6 @@
         await window.updateAuthorRoleCloud(email, newRole);
     };
 
-    // 8. ดึงรายชื่อนักเขียนที่ใช้งานอยู่เพื่อทำการปลดสิทธิ์
     window.getActiveAuthorsCloud = async function() {
         try {
             const usersRef = collection(window.db, "users");
