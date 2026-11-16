@@ -869,15 +869,18 @@
         renderSavedAccounts();
     }
 
+    /* 🛡️ ฟังก์ชันอัปเดตโลโก้เว็บให้แสดงผลทุกคน */
+    let globalSiteLogoCache = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+
     function updateAdminHeaderLogo() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         const logoContainer = document.getElementById('adminLogoContainer');
         const logoImg = document.getElementById('adminHeaderLogoImg');
 
+        if (logoImg) logoImg.src = globalSiteLogoCache;
+
         if (currentUser && currentUser.role === 'super_admin') {
             logoContainer.classList.remove('hidden');
-            let savedLogo = localStorage.getItem('mynovel_adminLogo') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
-            logoImg.src = savedLogo;
         } else {
             logoContainer.classList.add('hidden');
         }
@@ -893,9 +896,12 @@
         const file = event.target.files[0];
         if (!file) return;
         compressImageFile(file, 200, 0.8, function(compressedBase64) {
-            localStorage.setItem('mynovel_adminLogo', compressedBase64);
+            globalSiteLogoCache = compressedBase64;
             updateAdminHeaderLogo();
-            alert("อัปเดตโลโก้เว็บสำเร็จ!");
+            if (window.saveSiteLogoToCloud) {
+                window.saveSiteLogoToCloud(compressedBase64);
+            }
+            alert("อัปเดตโลโก้เว็บสำเร็จ (ทุกคนเห็นเหมือนกันทั่วระบบ)!");
         });
     }
 
@@ -2301,6 +2307,25 @@
     let currentUserProfile = null;
     let novelsCache = [];
 
+    // ดึงค่าโลโก้กลางจาก Firestore ทันทีที่โหลดระบบ
+    async function fetchSiteLogoFromCloud() {
+        try {
+            const docRef = doc(window.db, "settings", "site_config");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists() && docSnap.data().logoUrl) {
+                globalSiteLogoCache = docSnap.data().logoUrl;
+                updateAdminHeaderLogo();
+            }
+        } catch (e) { console.error("Error loading site logo:", e); }
+    }
+
+    window.saveSiteLogoToCloud = async function(base64Url) {
+        try {
+            const docRef = doc(window.db, "settings", "site_config");
+            await setDoc(docRef, { logoUrl: base64Url }, { merge: true });
+        } catch (e) { console.error("Error saving site logo:", e); }
+    };
+
     onAuthStateChanged(window.auth, async (firebaseUser) => {
         if (firebaseUser) {
             const userDocRef = doc(window.db, "users", firebaseUser.uid);
@@ -2316,6 +2341,7 @@
             currentUserProfile = null;
             localStorage.removeItem('mynovel_currentUser');
         }
+        await fetchSiteLogoFromCloud();
         if (typeof updateUIByAuth === 'function') updateUIByAuth();
         if (typeof renderHomeNovels === 'function') renderHomeNovels();
     });
@@ -2625,6 +2651,7 @@
     };
 
     fetchNovelsFromFirestore();
+    fetchSiteLogoFromCloud();
 </script>
 </body>
 </html>
