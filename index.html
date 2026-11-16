@@ -2259,7 +2259,18 @@
         ['homeView', 'novelDetailView', 'readerView', 'adminStudioView', 'writerDashboardView', 'superAdminView', 'supportInboxView', 'favoritesView', 'readingHistoryView'].forEach(id => document.getElementById(id).classList.add('hidden'));
     }
 
-    function goHome() { hideAllViews(); document.getElementById('homeView').classList.remove('hidden'); renderHomeNovels(); }
+    /* 🔄 ปรับปรุง goHome ให้ดึงข้อมูลล่าสุดจาก Firebase ทุกครั้งที่มีการเปลี่ยนหน้าหรือกลับมาหน้าหลัก */
+    function goHome() { 
+        hideAllViews(); 
+        document.getElementById('homeView').classList.remove('hidden'); 
+        if (window.fetchNovelsFromFirestore) {
+            window.fetchNovelsFromFirestore().then(() => {
+                renderHomeNovels();
+            });
+        } else {
+            renderHomeNovels();
+        }
+    }
 
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('-translate-x-full');
@@ -2281,7 +2292,7 @@
 
     initButtonCooldown('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง');
     updateNotifBadge();
-    renderHomeNovels();
+    goHome();
 </script>
 
 <!-- โหลด Firebase SDK และเชื่อมต่อระบบคลาวด์จริง -->
@@ -2343,7 +2354,7 @@
         }
         await fetchSiteLogoFromCloud();
         if (typeof updateUIByAuth === 'function') updateUIByAuth();
-        if (typeof renderHomeNovels === 'function') renderHomeNovels();
+        if (typeof goHome === 'function') goHome();
     });
 
     window.handleRegister = async function(e) {
