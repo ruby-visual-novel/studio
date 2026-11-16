@@ -8,6 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Prompt', sans-serif; }
+        
+        /* 🔒 บล็อกการคลุมดำเลือกข้อความและคัดลอกทั้งหน้าเว็บ */
+        body {
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none;    /* Firefox */
+            -ms-user-select: none;     /* IE10+/Edge */
+            user-select: none;         /* Standard */
+        }
     </style>
 
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
@@ -455,6 +463,20 @@
 
     <!-- JavaScript โค้ดหลัก -->
     <script>
+        // 🔒 สคริปต์ป้องกันการคลิกขวาและปุ่มลัดคัดลอก (Ctrl+C, Ctrl+X, Ctrl+U, F12)
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            alert("ไม่อนุญาตให้คลิกขวาเพื่อคัดลอกเนื้อหาครับ 🔒");
+        });
+
+        document.addEventListener('keydown', function(e) {
+            // บล็อก Ctrl+C, Ctrl+X, Ctrl+U, Ctrl+S และ F12
+            if (e.key === 'F12' || (e.ctrlKey && ['c', 'x', 'u', 's', 'a'].includes(e.key.toLowerCase()))) {
+                e.preventDefault();
+                alert("ไม่อนุญาตให้คัดลอกเนื้อหาหรือใช้คำสั่งนี้ครับ 🚫");
+            }
+        });
+
         // ฟังก์ชันสลับความสว่าง (ขาว-ดำ) ตามสไลด์บาร์
         function changeThemeBrightness(val) {
             const body = document.getElementById('mainBody');
