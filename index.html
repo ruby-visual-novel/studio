@@ -2084,3 +2084,180 @@
     updateNotifBadge();
     renderHomeNovels();
 </script>
+
+<!-- โหลด Firebase SDK แบบ Modular (ES Modules) -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // 1. ตั้งค่า Firebase Configuration ของคุณ (ใส่ค่าจริงเรียบร้อยแล้ว)
+    const firebaseConfig = {
+        apiKey: "AIzaSyCdCcrt5dbB9CyPl3jHrbAPExnBez0qYJ0",
+        authDomain: "ruby-visual-novel.firebaseapp.com",
+        projectId: "ruby-visual-novel",
+        storageBucket: "ruby-visual-novel.firebasestorage.app",
+        messagingSenderId: "297659783484",
+        appId: "1:297659783484:web:c21cd65d5a473522dd6639",
+        measurementId: "G-PL2Y7MDD0V"
+    };
+
+    // เริ่มต้นใช้งาน Firebase และผูกไว้กับ window เพื่อให้เรียกใช้งานได้ทั่วโปรเจกต์
+    const app = initializeApp(firebaseConfig);
+    window.auth = getAuth(app);
+    window.db = getFirestore(app);
+
+    let currentUserProfile = null;
+    let novelsCache = [];
+
+    // 2. ติดตามสถานะ Authentication
+    onAuthStateChanged(window.auth, async (firebaseUser) => {
+        if (firebaseUser) {
+            const userDocRef = doc(window.db, "users", firebaseUser.uid);
+            const userSnap = await getDoc(userDocRef);
+            if (userSnap.exists()) {
+                currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, ...userSnap.data() };
+            } else {
+                currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, name: firebaseUser.displayName || "ผู้ใช้", role: "customer", coins: 0 };
+            }
+            localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+        } else {
+            currentUserProfile = null;
+            localStorage.removeItem('mynovel_currentUser');
+        }
+        if (typeof updateUIByAuth === 'function') updateUIByAuth();
+        if (typeof renderHomeNovels === 'function') renderHomeNovels();
+    });
+
+    // 3. ฟังก์ชันสมัครสมาชิก (Register)
+    window.handleRegister = async function(e) {
+        e.preventDefault();
+        const name = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        const password = document.getElementById('regPassword').value;
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(window.auth, email, password);
+            const uid = userCredential.user.uid;
+
+            const userData = {
+                uid,
+                name,
+                email,
+                phone,
+                role: "customer",
+                coins: 0,
+                createdAt: new Date().toISOString()
+            };
+
+            await setDoc(doc(window.db, "users", uid), userData);
+            currentUserProfile = userData;
+            localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+            
+            alert("สมัครสมาชิกและเชื่อมต่อคลาวด์ Firebase สำเร็จ!");
+            closeModal('authModal');
+            updateUIByAuth();
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการสมัครสมาชิก: " + error.message);
+        }
+    };
+
+    // 4. ฟังก์ชันเข้าสู่ระบบ (Login)
+    window.handleLogin = async function(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
+            const uid = userCredential.user.uid;
+
+            const userDocRef = doc(window.db, "users", uid);
+            const userSnap = await getDoc(userDocRef);
+            
+            if (userSnap.exists()) {
+                currentUserProfile = { uid, ...userSnap.data() };
+            } else {
+                currentUserProfile = { uid, email, name: email, role: "customer", coins: 0 };
+            }
+
+            localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+            alert(`ยินดีต้อนรับคุณ ${currentUserProfile.name} เข้าสู่ระบบคลาวด์`);
+            closeModal('authModal');
+            updateUIByAuth();
+            goHome();
+        } catch (error) {
+            alert("เข้าสู่ระบบไม่สำเร็จ (อีเมลหรือรหัสผ่านไม่ถูกต้อง): " + error.message);
+        }
+    };
+
+    // 5. ฟังก์ชันออกจากระบบ (Logout)
+    window.handleLogout = async function() {
+        try {
+            await signOut(window.auth);
+            currentUserProfile = null;
+            localStorage.removeItem('mynovel_currentUser');
+            alert("ออกจากระบบแล้ว");
+            updateUIByAuth();
+            goHome();
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
+        }
+    };
+
+    // 6. ฟังก์ชันจัดการข้อมูลนิยายบน Firestore
+    window.getNovels = function() {
+        return novelsCache;
+    };
+
+    window.fetchNovelsFromFirestore = async function() {
+        try {
+            const querySnapshot = await getDocs(collection(window.db, "novels"));
+            novelsCache = [];
+            querySnapshot.forEach((docSnap) => {
+                novelsCache.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            if (typeof renderHomeNovels === 'function') renderHomeNovels();
+            return novelsCache;
+        } catch (error) {
+            console.error("Error fetching novels from Firestore:", error);
+            return [];
+        }
+    };
+
+    window.saveNovelsData = async function(dataOrNovel) {
+        try {
+            const novels = Array.isArray(dataOrNovel) ? dataOrNovel : [dataOrNovel];
+            for (let novel of novels) {
+                if (!novel.id || novel.id.startsWith("novel_")) {
+                    const docRef = doc(collection(window.db, "novels"));
+                    novel.id = docRef.id;
+                }
+                await setDoc(doc(window.db, "novels", novel.id), novel, { merge: true });
+            }
+            await fetchNovelsFromFirestore();
+            return true;
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูลลงคลาวด์: " + error.message);
+            return false;
+        }
+    };
+
+    window.deleteNovel = async function(novelId) {
+        if (!confirm("ต้องการลบนิยายเรื่องนี้ออกจากคลาวด์ใช่หรือไม่?")) return;
+        try {
+            await deleteDoc(doc(window.db, "novels", novelId));
+            await fetchNovelsFromFirestore();
+            if (typeof renderAdminNovels === 'function') renderAdminNovels();
+            if (typeof renderHomeNovels === 'function') renderHomeNovels();
+            if (typeof goHome === 'function') goHome();
+            alert("ลบนิยายสำเร็จ");
+        } catch (error) {
+            alert("เกิดข้อผิดพลาดในการลบ: " + error.message);
+        }
+    };
+
+    // โหลดข้อมูลนิยายเริ่มต้น
+    fetchNovelsFromFirestore();
+</script>
