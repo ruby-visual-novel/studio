@@ -594,6 +594,18 @@
     }
 
     function compressImageFile(file, maxWidth, quality, callback) {
+        // 🛡️ ป้องกันขนาดไฟล์ต้นฉบับเกิน 2MB ตั้งแต่ตอนเลือกไฟล์เพื่อไม่ให้กินพื้นที่ฐานข้อมูล
+        const maxSizeMB = 2;
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            alert(`⚠️ ไฟล์รูปภาพมีขนาดใหญ่เกินไป (${(file.size / (1024 * 1024)).toFixed(2)} MB)\nกรุณาเลือกไฟล์ที่มีขนาดไม่เกิน ${maxSizeMB} MB เพื่อป้องกันฐานข้อมูลเต็มครับ`);
+            return;
+        }
+
+        // แจ้งเตือนนักเขียนเบื้องต้นหากไฟล์มีขนาดค่อนข้างใหญ่
+        if (file.size > 1 * 1024 * 1024) {
+            console.log("ℹ️ กำลังบีบอัดรูปภาพขนาดใหญ่เพื่อให้เหมาะกับการเก็บบนระบบ...");
+        }
+
         const reader = new FileReader();
         reader.onload = function(event) {
             const img = new Image();
@@ -602,6 +614,7 @@
                 let width = img.width;
                 let height = img.height;
 
+                // ลดความกว้างสูงสุดลงเหลือ 600px เพื่อให้ Base64 มีขนาดเล็กมากๆ (ปลอดภัยต่อ 1MB Limit ของ Firestore)
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
                     width = maxWidth;
@@ -611,7 +624,17 @@
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
+                
+                // บีบอัดคุณภาพลงเหลือ 70% เพื่อให้ขนาดไฟล์หลังแปลงเป็น Base64 มีขนาดไม่เกินไม่กี่ร้อย KB
                 const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                
+                // 🔍 ตรวจสอบขนาด Base64 สุดท้ายก่อนส่งคืน
+                const base64SizeInKB = Math.round((compressedBase64.length * 3) / 4 / 1024);
+                if (base64SizeInKB > 800) {
+                    alert("⚠️ รูปภาพนี้มีความซับซ้อนสูง ทำให้ขนาดหลังบีบอัดยังใหญ่เกินไป แนะนำให้ใช้รูปภาพอื่นครับ");
+                    return;
+                }
+
                 callback(compressedBase64);
             };
             img.src = event.target.result;
