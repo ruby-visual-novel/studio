@@ -20,6 +20,7 @@
     </script>
 </head>
 <body id="mainBody" class="bg-black text-white min-h-screen flex flex-col transition-colors duration-300">
+    <!-- แถบเมนูด้านบน -->
     <header id="mainHeader" class="bg-zinc-900 shadow-sm sticky top-0 z-40 flex items-center justify-between px-4 py-3 border-b border-zinc-800 transition-colors duration-300">
         <div class="flex items-center gap-2">
             <button type="button" onclick="toggleSidebar()" class="relative z-50 p-3 -m-2 rounded-xl hover:bg-red-950 focus:outline-none cursor-pointer">
@@ -39,6 +40,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+            <!-- ปุ่มกระดิ่งแจ้งเตือน -->
             <div class="relative">
                 <button type="button" onclick="toggleNotificationModal()" class="p-2 rounded-lg hover:bg-zinc-800 focus:outline-none cursor-pointer relative">
                     <svg class="w-6 h-6 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,6 +74,7 @@
 
     <div id="sidebarBackdrop" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-black/60 z-40 transition-opacity"></div>
 
+    <!-- Sidebar -->
     <div id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-zinc-900 text-white shadow-2xl z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col border-r border-zinc-800">
         <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950">
             <span class="font-bold text-lg text-red-500">เมนูหลัก</span>
@@ -110,10 +113,12 @@
         <div id="authActionContainer" class="p-4 border-t border-zinc-800 bg-zinc-950"></div>
     </div>
 
+    <!-- ช่องค้นหา -->
     <div id="searchBar" class="hidden bg-zinc-900 border-b border-zinc-800 px-4 py-3 shadow-inner">
         <input type="text" id="searchInput" onkeyup="renderHomeNovels()" placeholder="ค้นหาชื่อเรื่อง, ชื่อนักเขียน..." class="w-full px-4 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-red-600 text-sm">
     </div>
 
+    <!-- หน้าหลัก -->
     <main id="homeView" class="flex-1 max-w-4xl w-full mx-auto p-4">
         <div class="flex items-center justify-between mb-4">
             <h2 id="homeSectionTitle" class="text-lg font-bold border-l-4 border-red-600 pl-2">นิยายภาพแนะนำ</h2>
@@ -121,23 +126,27 @@
         <div id="novelGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
     </main>
 
+    <!-- หน้ารายละเอียด -->
     <div id="novelDetailView" class="hidden flex-1 max-w-3xl w-full mx-auto p-4">
         <button onclick="goHome()" class="mb-4 text-sm text-red-500 font-medium flex items-center hover:underline">← กลับสู่หน้าหลัก</button>
         <div id="novelDetailContent" class="theme-card bg-zinc-900 rounded-2xl shadow-sm p-5 border border-zinc-800"></div>
     </div>
 
+    <!-- หน้ารายการโปรด -->
     <div id="favoritesView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4">
         <button onclick="goHome()" class="mb-4 text-sm text-red-500">← กลับหน้าหลัก</button>
         <h2 class="text-xl font-bold text-red-500 mb-4">❤️ รายการโปรดของฉัน</h2>
         <div id="favoritesGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
     </div>
 
+    <!-- หน้าประวัติการอ่าน -->
     <div id="readingHistoryView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4">
         <button onclick="goHome()" class="mb-4 text-sm text-red-500">← กลับหน้าหลัก</button>
         <h2 class="text-xl font-bold text-red-500 mb-4">📖 ประวัติการอ่าน</h2>
         <div id="readingHistoryList" class="space-y-3"></div>
     </div>
 
+    <!-- หน้าอ่านนิยาย -->
     <div id="readerView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
         <div class="flex items-center justify-between mb-2">
             <button onclick="backToDetail()" class="text-sm text-red-500 font-medium flex items-center hover:underline">← กลับไปหน้ารายชื่อตอน</button>
@@ -152,6 +161,7 @@
                 </div>
             </div>
 
+            <!-- กล่องช้อยส์ -->
             <div id="choiceBox" class="hidden p-4 bg-zinc-900/98 flex flex-col gap-2 absolute inset-x-0 bottom-0 z-10 border-t border-zinc-700 max-h-[280px] overflow-y-auto">
                 <p class="text-xs text-red-300 text-center font-medium">-- เลือกคำตอบเพื่อดำเนินเรื่องต่อ --</p>
                 <button id="choiceBtn1" onclick="makeChoice(1)" class="bg-red-800 hover:bg-red-900 text-white text-sm sm:text-base py-3 px-4 rounded-xl text-left shadow transition font-medium"></button>
@@ -166,6 +176,7 @@
         </div>
     </div>
 
+    <!-- สตูดิโอแอดมิน -->
     <div id="adminStudioView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4">
         <div class="theme-card flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 gap-3">
             <div>
@@ -182,6 +193,7 @@
         <div id="adminNovelList" class="space-y-4"></div>
     </div>
 
+    <!-- แดชบอร์ดรายได้นักเขียน -->
     <div id="writerDashboardView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 space-y-6">
         <div class="theme-card bg-zinc-900 p-5 rounded-2xl shadow-sm border border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -191,6 +203,7 @@
             <button onclick="goHome()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-2 rounded-lg cursor-pointer">← กลับหน้าแรก</button>
         </div>
 
+        <!-- ช่องค้นหา (แว่นขยาย) สำหรับแดชบอร์ดนักเขียนรายคน -->
         <div class="theme-card bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center gap-2">
             <span class="text-red-500 text-lg">🔍</span>
             <input type="text" id="searchWriterDashboardInput" onkeyup="renderWriterDashboardData()" placeholder="ค้นหาชื่อหรืออีเมลนักเขียนเพื่อดูแดชบอร์ดรายคน..." class="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
@@ -217,6 +230,7 @@
         </div>
     </div>
 
+    <!-- Super Admin -->
     <div id="superAdminView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 space-y-6">
         <div id="superAdminOnlySettings" class="space-y-6">
             <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 flex items-center justify-between">
@@ -260,6 +274,7 @@
         <div id="activeAuthorList" class="space-y-3"></div>
     </div>
 
+    <!-- Support Inbox -->
     <div id="supportInboxView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
         <div class="theme-card mb-4 bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800">
             <h2 class="text-xl font-bold text-red-500">💬 กล่องข้อความซัพพอร์ต</h2>
@@ -277,6 +292,7 @@
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="topupModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-sm w-full p-6 shadow-xl relative text-center">
             <button onclick="closeModal('topupModal')" class="absolute top-4 right-4 text-zinc-400 hover:text-white">✕</button>
@@ -303,6 +319,7 @@
         </form>
     </div>
 
+    <!-- Novel Form Modal -->
     <div id="novelFormModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-xl relative">
             <button onclick="closeModal('novelFormModal')" class="absolute top-4 right-4 text-zinc-400">✕</button>
@@ -356,6 +373,7 @@
         </div>
     </div>
 
+    <!-- Episode Editor Modal -->
     <div id="episodeEditorModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 overflow-y-auto">
         <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-3xl w-full p-5 shadow-2xl relative my-auto max-h-[90vh] flex flex-col">
             <div class="flex items-center justify-between border-b border-zinc-800 pb-3 mb-3">
@@ -403,6 +421,7 @@
         </div>
     </div>
 
+    <!-- Auth Modal -->
     <div id="authModal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-6 shadow-xl relative">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-zinc-400">✕</button>
@@ -434,7 +453,9 @@
         </div>
     </div>
 
+    <!-- JavaScript โค้ดหลัก -->
     <script>
+        // ฟังก์ชันสลับความสว่าง (ขาว-ดำ) ตามสไลด์บาร์
         function changeThemeBrightness(val) {
             const body = document.getElementById('mainBody');
             const header = document.getElementById('mainHeader');
@@ -464,29 +485,18 @@
             }
         }
 
-        const superAdminEmail = "rubystudio0203@gmail.com";
-        const defaultSuperAdmin = { name: "แอดมินสูงสุด", email: superAdminEmail, phone: "0999999999", password: "Tai&1982Tai&1982", role: "super_admin", coins: 0 };
+        const superAdminEmail = "";
+        const defaultSuperAdmin = { name: "", email: "", phone: "", password: "", role: "super_admin", coins: 0 };
 
-        let existingUsers = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let superAdminObj = existingUsers.find(u => u.email === superAdminEmail) || defaultSuperAdmin;
-        superAdminObj.role = "super_admin";
-        superAdminObj.password = "Tai&1982Tai&1982";
-        superAdminObj.coins = 0;
+        let existingUsers = [];
+        let superAdminObj = defaultSuperAdmin;
 
-        localStorage.setItem('mynovel_users', JSON.stringify([superAdminObj]));
-
-        let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-        if (!currentUser || currentUser.email !== superAdminEmail) {
-            localStorage.setItem('mynovel_currentUser', JSON.stringify(superAdminObj));
-        }
-
+        localStorage.removeItem('mynovel_users');
+        localStorage.removeItem('mynovel_currentUser');
         localStorage.removeItem('mynovel_savedAccounts');
         localStorage.removeItem('mynovel_topups');
         localStorage.removeItem('mynovel_chats');
         localStorage.removeItem('mynovel_reports');
-        localStorage.removeItem(`mynovel_favorites_${superAdminEmail}`);
-        localStorage.removeItem(`mynovel_history_${superAdminEmail}`);
-        localStorage.removeItem(`mynovel_notifications_${superAdminEmail}`);
 
         if (localStorage.getItem('mynovel_authorRecruitmentOpen') === null) {
             localStorage.setItem('mynovel_authorRecruitmentOpen', 'true');
@@ -1794,7 +1804,7 @@
                 let n = novels.find(item => item.id === editId);
                 if (n) { n.title = title; n.category = category; n.cover = cover; n.description = description; n.published = published; }
             } else {
-                novels.push({ id: "novel_" + Date.now(), title, category, author: currentUser.name, authorEmail: currentUser.email, cover, description, published, episodes: [] });
+                novels.push({ id: "novel_" + Date.now(), title, category, author: currentUser ? currentUser.name : 'ผู้แต่ง', authorEmail: currentUser ? currentUser.email : '', cover, description, published, episodes: [] });
             }
             if (saveNovelsData(novels)) {
                 closeModal('novelFormModal');
