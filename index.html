@@ -869,15 +869,16 @@
         renderSavedAccounts();
     }
 
-    /* 🛡️ ฟังก์ชันอัปเดตโลโก้เว็บให้แสดงผลทุกคน */
-    let globalSiteLogoCache = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+    /* 🛡️ ฟังก์ชันอัปเดตโลโก้เว็บให้แสดงผลทุกคน พร้อมระบบแคช LocalStorage กันโลโก้หายเวลารีเฟรชหรือสลับบัญชี */
+    let globalSiteLogoCache = localStorage.getItem('mynovel_site_logo_cache') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
 
     function updateAdminHeaderLogo() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         const logoContainer = document.getElementById('adminLogoContainer');
         const logoImg = document.getElementById('adminHeaderLogoImg');
 
-        if (logoImg) logoImg.src = globalSiteLogoCache;
+        let currentLogo = localStorage.getItem('mynovel_site_logo_cache') || globalSiteLogoCache;
+        if (logoImg) logoImg.src = currentLogo;
 
         if (currentUser && currentUser.role === 'super_admin') {
             logoContainer.classList.remove('hidden');
@@ -897,6 +898,7 @@
         if (!file) return;
         compressImageFile(file, 200, 0.8, function(compressedBase64) {
             globalSiteLogoCache = compressedBase64;
+            localStorage.setItem('mynovel_site_logo_cache', compressedBase64);
             updateAdminHeaderLogo();
             if (window.saveSiteLogoToCloud) {
                 window.saveSiteLogoToCloud(compressedBase64);
@@ -1223,13 +1225,18 @@
         alert(!isOpen ? "เปิดระบบรับสมัครนักเขียนแล้ว!" : "ปิดระบบรับสมัครนักเขียนแล้ว!");
     }
 
+    /* 🛡️ ปรับปรุงระบบค้นหาคำขอเติมเงิน รองรับ .trim() และ .toLowerCase() ค้นหาเจอแน่นอน */
     function renderPendingTopups() {
         let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
         let searchQuery = (document.getElementById('searchDirectTopupInput')?.value || '').toLowerCase().trim();
         let container = document.getElementById('pendingTopUpList');
         let pendingList = topups.filter(t => t.status === 'pending');
+        
         if (searchQuery) {
-            pendingList = pendingList.filter(t => t.email.toLowerCase().includes(searchQuery) || t.name.toLowerCase().includes(searchQuery));
+            pendingList = pendingList.filter(t => 
+                (t.email && t.email.toLowerCase().trim().includes(searchQuery)) || 
+                (t.name && t.name.toLowerCase().trim().includes(searchQuery))
+            );
         }
 
         container.innerHTML = pendingList.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบรายการแจ้งเติมเงินที่ค้นหา</div>` : '';
@@ -1257,7 +1264,7 @@
         let container = document.getElementById('superAdminTopupHistoryList');
         if (!container) return;
 
-        let filtered = topups.filter(t => t.name.toLowerCase().includes(query) || t.email.toLowerCase().includes(query));
+        let filtered = topups.filter(t => (t.name && t.name.toLowerCase().trim().includes(query)) || (t.email && t.email.toLowerCase().trim().includes(query)));
         let displayList = query === '' ? filtered.slice(0, 3) : filtered;
 
         container.innerHTML = displayList.length === 0 ? `<p class="text-xs text-zinc-500 text-center py-3">ไม่พบประวัติการเติมเหรียญ</p>` : displayList.map(t => `
@@ -2325,6 +2332,7 @@
             const docSnap = await getDoc(docRef);
             if (docSnap.exists() && docSnap.data().logoUrl) {
                 globalSiteLogoCache = docSnap.data().logoUrl;
+                localStorage.setItem('mynovel_site_logo_cache', globalSiteLogoCache);
                 updateAdminHeaderLogo();
             }
         } catch (e) { console.error("Error loading site logo:", e); }
@@ -2580,7 +2588,7 @@
             let html = '';
             querySnapshot.forEach((docSnap) => {
                 let u = docSnap.data();
-                if (searchQuery && !u.email.toLowerCase().includes(searchQuery) && !(u.name && u.name.toLowerCase().includes(searchQuery))) return;
+                if (searchQuery && !u.email.toLowerCase().trim().includes(searchQuery) && !(u.name && u.name.toLowerCase().trim().includes(searchQuery))) return;
                 html += `
                     <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
                         <div>
