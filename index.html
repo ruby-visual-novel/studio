@@ -20,8 +20,8 @@
 <!-- แถบบบน (Header) -->
 <header id="mainHeader" class="sticky top-0 bg-zinc-900 border-b border-zinc-800 z-30 px-4 py-3 flex items-center justify-between shadow-md">
     <div class="flex items-center gap-3">
-        <button type="button" onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-zinc-800 focus:outline-none cursor-pointer">
-            <svg class="w-6 h-6 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <button type="button" id="sidebarToggleBtn" class="p-2 rounded-lg hover:bg-zinc-800 focus:outline-none cursor-pointer relative z-50">
+            <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
         </button>
@@ -255,7 +255,7 @@
             </div>
         </div>
 
-        <!-- 🛡️ จัดการคำขอเติมเหรียญ -->
+        <!-- 🛡️ จัดการคำขอเติมเหรียญ (เพิ่มช่องค้นหาอีเมลลูกค้า) -->
         <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 space-y-3">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <h2 class="text-xl font-bold theme-heading">🛡️ จัดการคำขอเติมเหรียญ (เติมให้ลูกค้าทาง LINE)</h2>
@@ -272,7 +272,7 @@
             <div id="superAdminTopupHistoryList" class="space-y-2 mt-2"></div>
         </div>
 
-        <!-- 🛡️ จัดการคำขอเป็นนักเขียน -->
+        <!-- 🛡️ จัดการคำขอเป็นนักเขียน (เพิ่มช่องค้นหาอีเมลนักเขียน) -->
         <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 mt-6 space-y-3">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <h2 class="text-xl font-bold theme-heading">🛡️ จัดการคำขอเป็นนักเขียน (ค่าสมัคร 349 บาท)</h2>
@@ -447,8 +447,8 @@
         <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-zinc-400">✕</button>
         <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
             <h2 class="text-xl font-bold text-center text-red-500">เข้าสู่ระบบ</h2>
-            <div><label class="block text-sm mb-1 text-white">อีเมล</label><input type="email" id="loginEmail" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
-            <div><label class="block text-sm mb-1 text-white">รหัสผ่าน</label><input type="password" id="loginPassword" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
+            <div><label class="block text-sm mb-1">อีเมล</label><input type="email" id="loginEmail" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
+            <div><label class="block text-sm mb-1">รหัสผ่าน</label><input type="password" id="loginPassword" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
             <div class="text-right"><button type="button" onclick="switchAuthTab('forgot')" class="text-xs text-red-400 underline">ลืมรหัสผ่าน?</button></div>
             <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white py-2.5 rounded-lg text-sm font-medium">เข้าสู่ระบบ</button>
             <p class="text-center text-sm mt-4">ยังไม่มีบัญชี? <button type="button" onclick="switchAuthTab('register')" class="text-red-400 font-semibold underline">สมัครสมาชิก</button></p>
@@ -457,9 +457,9 @@
         <form id="registerForm" onsubmit="handleRegister(event)" class="hidden space-y-3">
             <h2 class="text-xl font-bold text-center text-red-500">สมัครสมาชิกใหม่</h2>
             <div><label class="block text-sm mb-1 text-white">ชื่อผู้ใช้</label><input type="text" id="regName" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
-            <div><label class="block text-sm mb-1 text-white">อีเมล</label><input type="email" id="regEmail" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
-            <div><label class="block text-sm mb-1 text-white">เบอร์โทร</label><input type="tel" id="regPhone" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
-            <div><label class="block text-sm mb-1 text-white">รหัสผ่าน</label><input type="password" id="regPassword" required minlength="6" class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
+            <div><label class="block text-sm mb-1">อีเมล</label><input type="email" id="regEmail" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
+            <div><label class="block text-sm mb-1">เบอร์โทร</label><input type="tel" id="regPhone" required class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
+            <div><label class="block text-sm mb-1">รหัสผ่าน</label><input type="password" id="regPassword" required minlength="6" class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm"></div>
             <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white py-2.5 rounded-lg text-sm font-medium">ยืนยันการสมัคร</button>
             <p class="text-center text-sm mt-2"><button type="button" onclick="switchAuthTab('login')" class="text-red-400 underline">กลับไปเข้าสู่ระบบ</button></p>
         </form>
@@ -467,7 +467,7 @@
         <form id="forgotForm" onsubmit="handleForgotPassword(event)" class="hidden space-y-4">
             <h2 class="text-xl font-bold text-center text-red-500">กู้คืนรหัสผ่าน</h2>
             <div>
-                <label class="block text-sm mb-1 text-white">อีเมล</label>
+                <label class="block text-sm mb-1">อีเมล</label>
                 <input type="email" id="recoveryInput" required placeholder="กรอกอีเมลของคุณ..." class="w-full px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-sm">
             </div>
             <button type="submit" class="w-full bg-red-800 hover:bg-red-900 text-white py-2.5 rounded-lg text-sm font-medium">ส่งรหัสกู้คืน</button>
@@ -833,8 +833,8 @@
             }
 
             profileSection.innerHTML = `
-                <p class="font-bold text-sm text-white">${currentUser.name} ${badge}</p>
-                <p class="text-xs text-zinc-300 mb-1">${currentUser.email}</p>
+                <p class="font-bold text-sm">${currentUser.name} ${badge}</p>
+                <p class="text-xs text-zinc-400 mb-1">${currentUser.email}</p>
                 ${coinSectionHtml}
                 ${actionHtml}
             `;
@@ -855,7 +855,7 @@
 
             authActionContainer.innerHTML = `<button onclick="handleLogout()" class="w-full bg-red-950 text-red-400 py-2 rounded-lg font-medium hover:bg-red-900 text-sm cursor-pointer border border-red-900">ออกจากระบบ</button>`;
         } else {
-            profileSection.innerHTML = `<p class="text-sm font-medium text-white">ยินดีต้อนรับสู่ Ruby Visual Novel</p><p class="text-xs text-zinc-300 mt-1">กรุณาเข้าสู่ระบบ</p>`;
+            profileSection.innerHTML = `<p class="text-sm font-medium">ยินดีต้อนรับสู่ Ruby Visual Novel</p><p class="text-xs text-zinc-400 mt-1">กรุณาเข้าสู่ระบบ</p>`;
             adminMenuBtn.classList.add('hidden');
             writerDashboardBtn.classList.add('hidden');
             superAdminMenuBtn.classList.add('hidden');
@@ -915,15 +915,15 @@
         const notifs = getNotifications();
 
         if (notifs.length === 0) {
-            listContainer.innerHTML = `<div class="p-4 text-center text-zinc-400">ไม่มีการแจ้งเตือนใหม่</div>`;
+            listContainer.innerHTML = `<div class="p-4 text-center text-zinc-500">ไม่มีการแจ้งเตือนใหม่</div>`;
             return;
         }
 
         listContainer.innerHTML = notifs.map(n => `
             <div onclick="clickNotification('${n.id}', '${n.novelId}', '${n.episodeId}')" class="p-3 hover:bg-zinc-800 cursor-pointer transition ${n.isRead ? 'opacity-60 bg-zinc-900' : 'bg-zinc-950 border-l-4 border-red-600'}">
-                <p class="font-bold text-white">${escapeHtml(n.title)}</p>
-                <p class="text-zinc-200 mt-0.5">${escapeHtml(n.message)}</p>
-                <span class="text-[10px] text-zinc-400 mt-1 block">${n.time}</span>
+                <p class="font-bold text-zinc-200">${escapeHtml(n.title)}</p>
+                <p class="text-zinc-400 mt-0.5">${escapeHtml(n.message)}</p>
+                <span class="text-[10px] text-zinc-500 mt-1 block">${n.time}</span>
             </div>
         `).join('');
     }
@@ -1009,11 +1009,11 @@
         let myNovels = novels.filter(n => {
             if (currentUser.role === 'super_admin' || currentUser.role === 'admin') {
                 if (searchQuery) {
-                    return n.author.toLowerCase().includes(searchQuery) || n.authorEmail.toLowerCase().includes(searchQuery);
+                    return n.author.toLowerCase().includes(searchQuery) || (n.authorEmail && n.authorEmail.toLowerCase().includes(searchQuery));
                 }
                 return true;
             }
-            return n.authorEmail === currentUser.email;
+            return (n.authorEmail || '').toLowerCase() === (currentUser.email || '').toLowerCase();
         });
 
         let myNovelIds = myNovels.map(n => n.id);
@@ -1028,11 +1028,11 @@
         document.getElementById('companyShare20').innerText = `${company20.toFixed(2)} บาท`;
 
         let listContainer = document.getElementById('writerUnlockHistoryList');
-        listContainer.innerHTML = myUnlocks.length === 0 ? `<p class="text-xs text-zinc-400 text-center py-4">ยังไม่มีประวัติการปลดล็อกตอนนิยาย (ข้อมูลเก็บบันทึกย้อนหลัง 6 เดือน)</p>` : myUnlocks.map(u => `
+        listContainer.innerHTML = myUnlocks.length === 0 ? `<p class="text-xs text-zinc-500 text-center py-4">ยังไม่มีประวัติการปลดล็อกตอนนิยาย (ข้อมูลเก็บบันทึกย้อนหลัง 6 เดือน)</p>` : myUnlocks.map(u => `
             <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
                 <div>
-                    <p class="font-bold text-white">${escapeHtml(u.novelTitle)} - ${escapeHtml(u.episodeTitle)}</p>
-                    <p class="text-zinc-300 mt-0.5">นักเขียน: ${escapeHtml(u.authorEmail || 'ไม่ระบุ')} | ผู้อ่าน: ${escapeHtml(u.readerEmail)} | เวลา: ${u.time}</p>
+                    <p class="font-bold text-zinc-200">${escapeHtml(u.novelTitle)} - ${escapeHtml(u.episodeTitle)}</p>
+                    <p class="text-zinc-500 mt-0.5">นักเขียน: ${escapeHtml(u.authorEmail || 'ไม่ระบุ')} | ผู้อ่าน: ${escapeHtml(u.readerEmail)} | เวลา: ${u.time}</p>
                 </div>
                 <div class="text-right">
                     <span class="text-amber-400 font-bold">+${u.price} เหรียญ</span>
@@ -1111,7 +1111,7 @@
     }
 
     function toggleAuthorRecruitmentSetting() {
-        const isOpen = localStorage.getItem('mynovel_authorRecruitmentOpen'] === 'true';
+        const isOpen = localStorage.getItem('mynovel_authorRecruitmentOpen') === 'true';
         localStorage.setItem('mynovel_authorRecruitmentOpen', (!isOpen).toString());
         renderAuthorRecruitmentSettingBtn();
         updateUIByAuth();
@@ -1128,14 +1128,14 @@
             pendingList = pendingList.filter(t => t.email.toLowerCase().includes(searchQuery) || t.name.toLowerCase().includes(searchQuery));
         }
 
-        container.innerHTML = pendingList.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-400 border border-zinc-800 text-xs">ไม่พบรายการแจ้งเติมเงินที่ค้นหา</div>` : '';
+        container.innerHTML = pendingList.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบรายการแจ้งเติมเงินที่ค้นหา</div>` : '';
         pendingList.forEach(t => {
             container.innerHTML += `
                 <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm text-xs gap-3">
                     <div>
-                        <p class="font-bold text-sm text-white">${escapeHtml(t.name)} (<span class="text-zinc-200">${escapeHtml(t.email)}</span>)</p>
-                        <p class="text-zinc-300 mt-0.5">เวลาแจ้ง: ${t.time}</p>
-                        <p class="mt-1 font-semibold text-amber-400">สถานะ: ⏳ รอเติมเหรียญ (แอดมินจัดการทาง LINE)</p>
+                        <p class="font-bold text-sm">${escapeHtml(t.name)} (${escapeHtml(t.email)})</p>
+                        <p class="text-zinc-400 mt-0.5">เวลาแจ้ง: ${t.time}</p>
+                        <p class="mt-1 font-semibold text-amber-500">สถานะ: ⏳ รอเติมเหรียญ (แอดมินจัดการทาง LINE)</p>
                     </div>
                     <div class="flex items-center gap-2 w-full sm:w-auto">
                         <input type="number" id="inputCoins_${t.id}" min="1" value="${t.coins || ''}" placeholder="ระบุจำนวนเหรียญ" class="w-32 px-2.5 py-1.5 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
@@ -1156,12 +1156,12 @@
         let filtered = topups.filter(t => t.name.toLowerCase().includes(query) || t.email.toLowerCase().includes(query));
         let displayList = query === '' ? filtered.slice(0, 3) : filtered;
 
-        container.innerHTML = displayList.length === 0 ? `<p class="text-xs text-zinc-400 text-center py-3">ไม่พบประวัติการเติมเหรียญ</p>` : displayList.map(t => `
+        container.innerHTML = displayList.length === 0 ? `<p class="text-xs text-zinc-500 text-center py-3">ไม่พบประวัติการเติมเหรียญ</p>` : displayList.map(t => `
             <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex flex-col sm:flex-row justify-between items-start sm:items-center text-xs gap-1">
                 <div>
-                    <span class="font-bold text-white">${escapeHtml(t.name)}</span> 
-                    <span class="text-zinc-300">(${escapeHtml(t.email)})</span>
-                    <p class="text-zinc-400 mt-0.5">เวลา: ${t.time}</p>
+                    <span class="font-bold">${escapeHtml(t.name)}</span> 
+                    <span class="text-zinc-400">(${escapeHtml(t.email)})</span>
+                    <p class="text-zinc-500 mt-0.5">เวลา: ${t.time}</p>
                 </div>
                 <div class="text-right flex items-center gap-3">
                     <span class="font-semibold ${t.status === 'approved' ? 'text-emerald-400' : (t.status === 'rejected' ? 'text-red-400' : 'text-amber-400')}">
@@ -1173,7 +1173,7 @@
         `).join('');
         
         if (query === '' && filtered.length > 3) {
-            container.innerHTML += `<p class="text-[11px] text-zinc-400 text-center pt-1">แสดง 3 รายการล่าสุด</p>`;
+            container.innerHTML += `<p class="text-[11px] text-zinc-500 text-center pt-1">แสดง 3 รายการล่าสุด</p>`;
         }
     }
 
@@ -1315,7 +1315,8 @@
         let hasUnlocked = false;
         if (currentUser) {
             if (!currentUser.unlockedEpisodes) currentUser.unlockedEpisodes = [];
-            if (currentUser.role === 'super_admin' || currentUser.role === 'admin' || currentUser.email === novel.authorEmail || currentUser.unlockedEpisodes.includes(epId)) {
+            const isOwner = novel.authorEmail && currentUser.email && (currentUser.email.toLowerCase() === novel.authorEmail.toLowerCase());
+            if (currentUser.role === 'super_admin' || currentUser.role === 'admin' || isOwner || currentUser.unlockedEpisodes.includes(epId)) {
                 hasUnlocked = true;
             }
         }
@@ -1349,13 +1350,13 @@
     function loadUserChat() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         const chatContainer = document.getElementById('userChatMessages');
-        if (!currentUser) { chatContainer.innerHTML = `<p class="text-xs text-center text-zinc-400 mt-10">กรุณาเข้าสู่ระบบก่อน</p>`; return; }
+        if (!currentUser) { chatContainer.innerHTML = `<p class="text-xs text-center text-zinc-500 mt-10">กรุณาเข้าสู่ระบบก่อน</p>`; return; }
         let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
         let myChat = chats[currentUser.email] || [];
-        if (myChat.length === 0) { chatContainer.innerHTML = `<div class="text-center text-xs text-zinc-400 my-auto"><p class="font-semibold text-white">สวัสดีค่ะคุณ ${currentUser.name}</p><p class="mt-1">มีข้อสงสัยสอบถามแอดมินได้เลยค่ะ</p></div>`; return; }
+        if (myChat.length === 0) { chatContainer.innerHTML = `<div class="text-center text-xs text-zinc-500 my-auto"><p class="font-semibold">สวัสดีค่ะคุณ ${currentUser.name}</p><p class="mt-1">มีข้อสงสัยสอบถามแอดมินได้เลยค่ะ</p></div>`; return; }
         chatContainer.innerHTML = myChat.map(msg => `
             <div class="flex flex-col ${msg.sender === 'admin' ? 'items-start' : 'items-end'}">
-                <span class="text-[10px] text-zinc-400 mb-0.5">${msg.sender === 'admin' ? '🛡️ แอดมิน' : 'คุณ'}</span>
+                <span class="text-[10px] text-zinc-500 mb-0.5">${msg.sender === 'admin' ? '🛡️ แอดมิน' : 'คุณ'}</span>
                 <div class="max-w-[85%] px-3 py-2 rounded-xl text-xs ${msg.sender === 'admin' ? 'bg-zinc-800 text-zinc-100' : 'bg-red-800 text-white'} shadow-sm">${escapeHtml(msg.text)}</div>
             </div>
         `).join('');
@@ -1392,10 +1393,10 @@
         let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
         let listContainer = document.getElementById('adminChatUserList');
         let emails = Object.keys(chats);
-        if (emails.length === 0) { listContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">ยังไม่มีข้อความ</p>`; return; }
+        if (emails.length === 0) { listContainer.innerHTML = `<p class="text-xs text-zinc-500 text-center py-4">ยังไม่มีข้อความ</p>`; return; }
         listContainer.innerHTML = emails.map(email => {
             let lastMsg = chats[email][chats[email].length - 1];
-            return `<div onclick="selectChatUser('${email}')" class="p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800 cursor-pointer transition"><p class="font-bold text-xs text-white truncate">${lastMsg.userName || email}</p><p class="text-[11px] text-zinc-300 truncate mt-0.5">${lastMsg.text}</p></div>`;
+            return `<div onclick="selectChatUser('${email}')" class="p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800 cursor-pointer transition"><p class="font-bold text-xs truncate">${lastMsg.userName || email}</p><p class="text-[11px] text-zinc-400 truncate mt-0.5">${lastMsg.text}</p></div>`;
         }).join('');
     }
 
@@ -1408,8 +1409,8 @@
         document.getElementById('adminChatReplyForm').classList.remove('hidden');
         document.getElementById('adminChatMessages').innerHTML = userMsgs.map(msg => `
             <div class="flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}">
-                <span class="text-[10px] text-zinc-400 mb-0.5">${msg.sender === 'admin' ? 'แอดมิน (คุณ)' : msg.userName}</span>
-                <div class="max-w-[80%] px-3 py-2 rounded-xl text-xs ${msg.sender === 'admin' ? 'bg-red-800 text-white' : 'bg-zinc-900 border border-zinc-800 text-white'} shadow-sm">${escapeHtml(msg.text)}</div>
+                <span class="text-[10px] text-zinc-500 mb-0.5">${msg.sender === 'admin' ? 'แอดมิน (คุณ)' : msg.userName}</span>
+                <div class="max-w-[80%] px-3 py-2 rounded-xl text-xs ${msg.sender === 'admin' ? 'bg-red-800 text-white' : 'bg-zinc-900 border border-zinc-800'} shadow-sm">${escapeHtml(msg.text)}</div>
             </div>
         `).join('');
     }
@@ -1480,11 +1481,11 @@
         document.getElementById('favoritesView').classList.remove('hidden');
         const grid = document.getElementById('favoritesGrid');
         const novels = getNovels().filter(n => getFavorites().includes(n.id));
-        grid.innerHTML = novels.length === 0 ? `<p class="col-span-full text-center text-zinc-400 py-10">ยังไม่มีนิยายในรายการโปรด</p>` : novels.map(novel => `
+        grid.innerHTML = novels.length === 0 ? `<p class="col-span-full text-center text-zinc-500 py-10">ยังไม่มีนิยายในรายการโปรด</p>` : novels.map(novel => `
             <div class="theme-card bg-zinc-900 rounded-xl shadow-sm overflow-hidden border border-zinc-800">
                 <img src="${novel.cover}" class="w-full h-44 object-cover cursor-pointer" onclick="openNovelDetail('${novel.id}')">
                 <div class="p-3">
-                    <h3 class="font-bold text-sm mb-2 text-white">${novel.title}</h3>
+                    <h3 class="font-bold text-sm mb-2">${novel.title}</h3>
                     <button onclick="openNovelDetail('${novel.id}')" class="w-full bg-red-800 text-white py-2 rounded-lg text-sm mb-1 font-medium cursor-pointer">อ่านนิยาย</button>
                     <button onclick="toggleFavorite('${novel.id}')" class="w-full border border-zinc-700 text-red-400 py-2 rounded-lg text-sm cursor-pointer">ลบออก</button>
                 </div>
@@ -1515,14 +1516,14 @@
         const history = getReadingHistory();
         const novels = getNovels();
         let valid = history.filter(item => novels.some(n => n.id === item.novelId));
-        list.innerHTML = valid.length === 0 ? `<p class="text-center text-zinc-400 py-10">ยังไม่มีประวัติการอ่าน</p>` : valid.map(item => {
+        list.innerHTML = valid.length === 0 ? `<p class="text-center text-zinc-500 py-10">ยังไม่มีประวัติการอ่าน</p>` : valid.map(item => {
             let novel = novels.find(n => n.id === item.novelId);
             return `
                 <div class="theme-card bg-zinc-900 rounded-xl border border-zinc-800 p-3 flex gap-3 items-center">
                     <img src="${novel.cover}" class="w-20 h-24 object-cover rounded-lg">
                     <div class="flex-1 min-w-0">
-                        <h3 class="font-bold text-sm text-white">${novel.title}</h3>
-                        <p class="text-xs text-zinc-300 mt-1">${item.episodeTitle} (ฉากที่ ${item.sceneIndex + 1})</p>
+                        <h3 class="font-bold text-sm">${novel.title}</h3>
+                        <p class="text-xs text-zinc-400 mt-1">${item.episodeTitle} (ฉากที่ ${item.sceneIndex + 1})</p>
                         <button onclick="resumeReading('${item.novelId}', '${item.episodeId}', ${item.sceneIndex})" class="mt-2 bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">อ่านต่อจากจุดเดิม</button>
                     </div>
                 </div>
@@ -1548,7 +1549,7 @@
 
         let filtered = novels.filter(n => (currentCategory === 'ทั้งหมด' || n.category === currentCategory) && (n.title.toLowerCase().includes(query) || n.author.toLowerCase().includes(query)) && n.published !== false);
         
-        grid.innerHTML = filtered.length === 0 ? `<p class="col-span-full text-center text-zinc-400 py-10">ไม่พบนิยาย</p>` : filtered.map(novel => `
+        grid.innerHTML = filtered.length === 0 ? `<p class="col-span-full text-center text-zinc-500 py-10">ไม่พบนิยาย</p>` : filtered.map(novel => `
             <div class="theme-card bg-zinc-900 rounded-xl shadow-sm overflow-hidden border border-zinc-800 flex flex-col relative group">
                 <div class="h-48 bg-zinc-800 cursor-pointer" onclick="openNovelDetail('${novel.id}')">
                     <img src="${novel.cover}" class="w-full h-full object-cover">
@@ -1556,9 +1557,9 @@
                 <div class="p-3 flex-1 flex flex-col justify-between cursor-pointer" onclick="openNovelDetail('${novel.id}')">
                     <div>
                         <span class="text-[11px] bg-red-950 text-red-400 px-2 py-0.5 rounded-full font-medium border border-red-900">${novel.category}</span>
-                        <h3 class="font-bold text-sm text-white mt-1.5 line-clamp-1">${novel.title}</h3>
+                        <h3 class="font-bold text-sm mt-1.5 line-clamp-1">${novel.title}</h3>
                     </div>
-                    <div class="flex items-center justify-between text-xs text-zinc-300 mt-2 pt-2 border-t border-zinc-800">
+                    <div class="flex items-center justify-between text-xs text-zinc-400 mt-2 pt-2 border-t border-zinc-800">
                         <span>โดย ${novel.author}</span>
                         <span>${(novel.episodes || []).filter(e => e.published !== false).length} ตอน</span>
                     </div>
@@ -1585,7 +1586,8 @@
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
 
         const isAdmin = currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'admin');
-        const isAuthorOrAdmin = currentUser && (isAdmin || currentUser.email === novel.authorEmail);
+        const isOwner = currentUser && novel.authorEmail && currentUser.email && (currentUser.email.toLowerCase() === novel.authorEmail.toLowerCase());
+        const isAuthorOrAdmin = currentUser && (isAdmin || isOwner);
         let visibleEpisodes = (novel.episodes || []).filter(ep => ep.published !== false || isAuthorOrAdmin);
 
         document.getElementById('novelDetailContent').innerHTML = `
@@ -1596,37 +1598,37 @@
                         <span class="text-xs bg-red-950 text-red-400 px-2.5 py-0.5 rounded-full font-medium border border-red-900">${novel.category}</span>
                         ${isAdmin ? `<button onclick="deleteNovel('${novel.id}')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg font-bold shadow cursor-pointer">🗑️ ลบนิยายเรื่องนี้</button>` : ''}
                     </div>
-                    <h2 class="text-xl font-bold text-white mt-2">${escapeHtml(novel.title)}</h2>
-                    <p class="text-xs text-zinc-300 mt-1">ผู้แต่ง: ${novel.author}</p>
+                    <h2 class="text-xl font-bold mt-2">${escapeHtml(novel.title)}</h2>
+                    <p class="text-xs text-zinc-400 mt-1">ผู้แต่ง: ${novel.author}</p>
                     <p class="text-xs text-amber-500 font-semibold mt-1">⭐ ${avgRating} (${allReviews.length} รีวิว)</p>
-                    <p class="text-sm text-zinc-200 mt-3">${escapeHtml(novel.description || '')}</p>
+                    <p class="text-sm text-zinc-300 mt-3">${escapeHtml(novel.description || '')}</p>
                     <button onclick="toggleFavorite('${novel.id}')" class="mt-4 w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold text-sm cursor-pointer ${isFavorite ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-red-800 text-white'}">${isFavorite ? '❤️ ในรายการโปรด' : '♡ เพิ่มลงรายการโปรด'}</button>
                 </div>
             </div>
             <div class="mt-5">
-                <h3 class="font-bold text-white mb-3">สารบัญตอน</h3>
-                <div class="space-y-2.5">${visibleEpisodes.length === 0 ? '<p class="text-xs text-zinc-400">ยังไม่มีตอนที่เผยแพร่</p>' : visibleEpisodes.map(ep => `
+                <h3 class="font-bold mb-3">สารบัญตอน</h3>
+                <div class="space-y-2.5">${visibleEpisodes.length === 0 ? '<p class="text-xs text-zinc-500">ยังไม่มีตอนที่เผยแพร่</p>' : visibleEpisodes.map(ep => `
                     <div onclick="startReadingEpisode('${novel.id}', '${ep.id}')" class="flex items-center justify-between p-3.5 border border-zinc-800 rounded-xl hover:bg-zinc-800 cursor-pointer">
                         <div>
-                            <p class="font-semibold text-white text-sm">${escapeHtml(ep.title)} ${ep.published === false ? '<span class="text-[10px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded ml-1">ซ่อนอยู่</span>' : ''}</p>
-                            <p class="text-xs text-zinc-400">${(ep.scenes || []).length} ฉาก</p>
+                            <p class="font-semibold text-sm">${escapeHtml(ep.title)} ${ep.published === false ? '<span class="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded ml-1">ซ่อนอยู่</span>' : ''}</p>
+                            <p class="text-xs text-zinc-500">${(ep.scenes || []).length} ฉาก</p>
                         </div>
                         <span class="text-xs px-2.5 py-1 rounded-full font-semibold ${ep.price > 0 ? 'bg-amber-950 text-amber-400 border border-amber-900' : 'bg-emerald-950 text-emerald-400 border border-emerald-900'}">${ep.price > 0 ? '🪙 ' + ep.price + ' เหรียญ' : 'อ่านฟรี'}</span>
                     </div>
                 `).join('')}</div>
             </div>
             <div class="mt-8 pt-5 border-t border-zinc-800">
-                <h3 class="font-bold text-white mb-3">💬 รีวิว</h3>
+                <h3 class="font-bold mb-3">💬 รีวิว</h3>
                 <form onsubmit="submitReview(event, '${novel.id}')" class="bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl mb-4 space-y-2.5">
                     <select id="reviewRating_${novel.id}" class="border border-zinc-700 bg-zinc-900 text-white rounded px-2 py-1 text-xs"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select>
                     <textarea id="reviewComment_${novel.id}" rows="2" required placeholder="เขียนรีวิว..." class="w-full px-3 py-2 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs"></textarea>
                     <button type="submit" id="submitReviewBtn_${novel.id}" class="bg-red-800 hover:bg-red-900 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">ส่งรีวิว</button>
                 </form>
-                <div class="space-y-2.5">${allReviews.length === 0 ? '<p class="text-xs text-zinc-400">ยังไม่มีรีวิว</p>' : allReviews.map(r => `
+                <div class="space-y-2.5">${allReviews.length === 0 ? '<p class="text-xs text-zinc-500">ยังไม่มีรีวิว</p>' : allReviews.map(r => `
                     <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 text-xs space-y-1">
-                        <div class="flex justify-between"><span class="font-bold text-white">${escapeHtml(r.userName)} <span class="text-amber-500">${'⭐'.repeat(r.rating)}</span></span><span class="text-[10px] text-zinc-400">${r.time}</span></div>
-                        <p class="text-zinc-200">${escapeHtml(r.comment)}</p>
-                        <div class="flex justify-end">${(currentUser && (currentUser.email === r.userEmail || currentUser.role === 'super_admin' || currentUser.role === 'admin')) ? `<button onclick="deleteReview('${r.id}', '${novel.id}')" class="text-red-400 font-medium cursor-pointer">ลบ</button>` : `<button onclick="reportReview('${r.id}')" class="text-zinc-400 cursor-pointer">🚨 แจ้ง</button>`}</div>
+                        <div class="flex justify-between"><span class="font-bold">${escapeHtml(r.userName)} <span class="text-amber-500">${'⭐'.repeat(r.rating)}</span></span><span class="text-[10px] text-zinc-500">${r.time}</span></div>
+                        <p class="text-zinc-300">${escapeHtml(r.comment)}</p>
+                        <div class="flex justify-end">${(currentUser && (currentUser.email === r.userEmail || currentUser.role === 'super_admin' || currentUser.role === 'admin')) ? `<button onclick="deleteReview('${r.id}', '${novel.id}')" class="text-red-400 font-medium cursor-pointer">ลบ</button>` : `<button onclick="reportReview('${r.id}')" class="text-zinc-500 cursor-pointer">🚨 แจ้ง</button>`}</div>
                     </div>
                 `).join('')}</div>
             </div>
@@ -1686,18 +1688,18 @@
         const searchQuery = (document.getElementById('searchAdminNovelInput')?.value || '').toLowerCase().trim();
 
         let allNovels = getNovels();
-        let myNovels = allNovels.filter(n => currentUser.role === 'super_admin' || currentUser.role === 'admin' || n.authorEmail === currentUser.email);
+        let myNovels = allNovels.filter(n => currentUser.role === 'super_admin' || currentUser.role === 'admin' || (n.authorEmail && currentUser.email && n.authorEmail.toLowerCase() === currentUser.email.toLowerCase()));
 
         if (searchQuery !== '') {
             myNovels = myNovels.filter(n => n.title.toLowerCase().includes(searchQuery));
         }
 
-        list.innerHTML = myNovels.length === 0 ? `<div class="theme-card bg-zinc-900 p-8 rounded-xl text-center text-zinc-400 border border-zinc-800">ยังไม่มีนิยายของคุณ</div>` : myNovels.map(novel => `
+        list.innerHTML = myNovels.length === 0 ? `<div class="theme-card bg-zinc-900 p-8 rounded-xl text-center text-zinc-500 border border-zinc-800">ยังไม่มีนิยายของคุณ</div>` : myNovels.map(novel => `
             <div class="theme-card bg-zinc-900 rounded-xl shadow-sm border border-zinc-800 p-4">
                 <div class="flex flex-col sm:flex-row justify-between gap-3 pb-3 border-b border-zinc-800">
-                    <div><span class="text-[11px] bg-red-950 text-red-400 px-2 py-0.5 rounded font-medium border border-red-900">${novel.category}</span><h3 class="font-bold text-white text-lg inline ml-2">${escapeHtml(novel.title)}</h3></div>
+                    <div><span class="text-[11px] bg-red-950 text-red-400 px-2 py-0.5 rounded font-medium border border-red-900">${novel.category}</span><h3 class="font-bold text-lg inline ml-2">${escapeHtml(novel.title)}</h3></div>
                     <div class="flex flex-wrap gap-2 items-center">
-                        <button type="button" onclick="togglePublishNovel('${novel.id}')" class="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer ${novel.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-300'}">
+                        <button type="button" onclick="togglePublishNovel('${novel.id}')" class="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer ${novel.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-400'}">
                             ${novel.published !== false ? '🟢 เผยแพร่เรื่อง' : '🔴 ซ่อนเรื่อง'}
                         </button>
                         <button type="button" onclick="openEpisodeEditor('${novel.id}', null)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer">+ ตอน</button>
@@ -1708,11 +1710,11 @@
                 <div class="mt-3 space-y-2">${(novel.episodes || []).map(ep => `
                     <div class="flex flex-col sm:flex-row justify-between bg-zinc-950 p-3 rounded-xl border border-zinc-800 text-sm items-start sm:items-center gap-2">
                         <div>
-                            <span class="font-medium text-white">${escapeHtml(ep.title)}</span>
-                            <span class="ml-2 text-xs text-zinc-400">(${(ep.scenes || []).length} ฉาก | ${ep.price > 0 ? ep.price + ' เหรียญ' : 'ฟรี'})</span>
+                            <span class="font-medium">${escapeHtml(ep.title)}</span>
+                            <span class="ml-2 text-xs text-zinc-500">(${(ep.scenes || []).length} ฉาก | ${ep.price > 0 ? ep.price + ' เหรียญ' : 'ฟรี'})</span>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                            <button type="button" onclick="togglePublishEpisode('${novel.id}', '${ep.id}')" class="text-xs px-3 py-1 rounded-lg font-semibold cursor-pointer ${ep.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-300'}">
+                            <button type="button" onclick="togglePublishEpisode('${novel.id}', '${ep.id}')" class="text-xs px-3 py-1 rounded-lg font-semibold cursor-pointer ${ep.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-400'}">
                                 ${ep.published !== false ? '🟢 เผยแพร่แล้ว' : '🔴 ซ่อนอยู่'}
                             </button>
                             <div class="flex gap-1.5">
@@ -1831,7 +1833,7 @@
     let currentEditingKey = null;
 
     function getDraftStorageKey(novelId, epId) {
-        return `ruby_draft_${novelId}_${epId || 'new'}`;
+        return `ruby_draft_${novelId}_${epId || ('new_' + Date.now())}`;
     }
 
     function triggerAutosave() {
@@ -2002,7 +2004,7 @@
                     </div>
                     <div class="space-y-1">
                         <textarea rows="2" oninput="updateTempScene(${i}, 'text', this.value)" placeholder="บทสนทนา" class="w-full px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">${escapeHtml(scene.text || '')}</textarea>
-                        <div class="text-[10px] text-zinc-400 text-right">จำนวน: <span id="charCount_${i}">${charCount}</span> ตัวอักษร | <span id="wordCount_${i}">${wordCount}</span> คำ</div>
+                        <div class="text-[10px] text-zinc-500 text-right">จำนวน: <span id="charCount_${i}">${charCount}</span> ตัวอักษร | <span id="wordCount_${i}">${wordCount}</span> คำ</div>
                     </div>
                     <div>
                         <label class="inline-flex items-center cursor-pointer"><input type="checkbox" ${scene.hasChoice ? 'checked' : ''} onchange="toggleSceneChoice(${i}, this.checked)" class="rounded text-red-600"><span class="ml-2 text-xs font-semibold text-red-400">มีช้อยส์ให้เลือก (สูงสุด 4 ตัวเลือก)</span></label>
@@ -2135,6 +2137,17 @@
         document.getElementById('sidebar').classList.toggle('-translate-x-full');
         document.getElementById('sidebarBackdrop').classList.toggle('hidden');
     }
+
+    // ผูก Event ให้ปุ่มสามขีดทำงานได้ชัวร์ 100% ป้องกันปัญหาคลิกไม่ติด
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('sidebarToggleBtn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSidebar();
+            });
+        }
+    });
 
     function toggleSearch() { document.getElementById('searchBar').classList.toggle('hidden'); }
     function escapeHtml(str) { return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
@@ -2484,8 +2497,8 @@
                 html += `
                     <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
                         <div>
-                            <p class="font-bold text-sm text-white">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
-                            <p class="text-zinc-300">เบอร์โทร: ${escapeHtml(u.phone || '-')}</p>
+                            <p class="font-bold text-sm">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
+                            <p class="text-zinc-400">เบอร์โทร: ${escapeHtml(u.phone || '-')}</p>
                         </div>
                         <div class="flex gap-2">
                             <button onclick="approveAuthor('${u.email}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold cursor-pointer">อนุมัติเป็นนักเขียน</button>
@@ -2494,7 +2507,7 @@
                     </div>
                 `;
             });
-            container.innerHTML = html || `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-400 border border-zinc-800 text-xs">ไม่พบคำขอเป็นนักเขียนที่ค้นหา</div>`;
+            container.innerHTML = html || `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบคำขอเป็นนักเขียนที่ค้นหา</div>`;
         } catch (error) {
             console.error("Error fetching pending authors:", error);
         }
@@ -2526,8 +2539,7 @@
     window.getAdminManagementListCloud = async function() {
         try {
             const usersRef = collection(window.db, "users");
-            const q = query(usersRef, where("role", "in", ["admin", "customer"]));
-            const querySnapshot = await getDocs(q);
+            const querySnapshot = await getDocs(usersRef);
             
             let container = document.getElementById('adminManagementList');
             if (!container) return;
@@ -2535,12 +2547,12 @@
             let html = '';
             querySnapshot.forEach((docSnap) => {
                 let u = docSnap.data();
-                if (u.role === 'super_admin') return;
+                if (u.role === 'super_admin' || (u.role !== 'admin' && u.role !== 'customer')) return;
                 html += `
                     <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
                         <div>
-                            <p class="font-bold text-white">${escapeHtml(u.name)} (<span class="text-zinc-200">${escapeHtml(u.email)}</span>)</p>
-                            <p class="text-zinc-300">สถานะ: ${u.role === 'admin' ? '🛡️ แอดมินทั่วไป' : '👤 สมาชิกทั่วไป'}</p>
+                            <p class="font-bold">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
+                            <p class="text-zinc-400">สถานะ: ${u.role === 'admin' ? '🛡️ แอดมินทั่วไป' : '👤 สมาชิกทั่วไป'}</p>
                         </div>
                         <div>
                             ${u.role === 'admin' 
@@ -2551,7 +2563,7 @@
                     </div>
                 `;
             });
-            container.innerHTML = html || `<p class="text-xs text-zinc-400 text-center">ไม่มีบัญชีอื่นในระบบ</p>`;
+            container.innerHTML = html || `<p class="text-xs text-zinc-500 text-center">ไม่มีบัญชีอื่นในระบบ</p>`;
         } catch (error) {
             console.error("Error admin management list:", error);
         }
@@ -2576,13 +2588,13 @@
                 html += `
                     <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
                         <div>
-                            <p class="font-bold text-white">${escapeHtml(u.name)} (<span class="text-zinc-200">${escapeHtml(u.email)}</span>)</p>
+                            <p class="font-bold">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
                         </div>
                         <button onclick="revokeAuthor('${u.email}')" class="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded cursor-pointer">ปลดสิทธิ์นักเขียน</button>
                     </div>
                 `;
             });
-            container.innerHTML = html || `<p class="text-xs text-zinc-400 text-center">ยังไม่มีนักเขียนในระบบ</p>`;
+            container.innerHTML = html || `<p class="text-xs text-zinc-500 text-center">ยังไม่มีนักเขียนในระบบ</p>`;
         } catch (error) {
             console.error("Error active authors:", error);
         }
