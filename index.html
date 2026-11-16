@@ -311,7 +311,7 @@
     <div id="userChatMessages" class="flex-1 overflow-y-auto p-3 space-y-3 max-h-[350px] min-h-[300px] bg-zinc-950 text-sm"></div>
     <form id="userChatForm" onsubmit="sendUserMessage(event)" class="p-2.5 bg-zinc-900 border-t border-zinc-800 flex gap-2">
         <input type="text" id="userMsgInput" required placeholder="พิมพ์ข้อความ..." class="flex-1 px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
-        <button type="submit" class="bg-red-800 text-white px-3 py-2 rounded-lg text-xs">ส่ง</button>
+        <button type="submit" id="userMsgSubmitBtn" class="bg-red-800 hover:bg-red-900 text-white px-3 py-2 rounded-lg text-xs">ส่ง</button>
     </form>
 </div>
 
@@ -451,6 +451,72 @@
 
 <!-- JavaScript โค้ดหลัก -->
 <script>
+    // ฟังก์ชันจัดการระบบ Cooldown (60 วินาที) สำหรับป้องกันการกดรัว/บอทสแปม
+    function checkCooldown(actionKey, buttonId, originalText) {
+        const lastActionTime = parseInt(localStorage.getItem(actionKey) || '0');
+        const now = Date.now();
+        const cooldownTime = 60 * 1000; // 60 วินาที
+        const elapsed = now - lastActionTime;
+
+        if (elapsed < cooldownTime) {
+            const remainingSecs = Math.ceil((cooldownTime - elapsed) / 1000);
+            alert(`กรุณารอสักครู่... ระบบจำกัดการกดส่งซ้ำ (Cooldown ${remainingSecs} วินาที)`);
+            return false;
+        }
+        return true;
+    }
+
+    function startCooldownTimer(actionKey, buttonId, originalText) {
+        localStorage.setItem(actionKey, Date.now().toString());
+        const btn = document.getElementById(buttonId);
+        if (!btn) return;
+
+        btn.disabled = true;
+        let remaining = 60;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+        const interval = setInterval(() => {
+            remaining--;
+            if (remaining > 0) {
+                btn.innerText = `⏳ รอ ${remaining}s`;
+            } else {
+                clearInterval(interval);
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerText = originalText;
+            }
+        }, 1000);
+    }
+
+    // ตรวจสอบสถานะปุ่มเมื่อโหลดหน้าเว็บ (รองรับกรณีกดรีเฟรชหรือเปิดแท็บใหม่)
+    function initButtonCooldown(actionKey, buttonId, originalText) {
+        const lastActionTime = parseInt(localStorage.getItem(actionKey) || '0');
+        const now = Date.now();
+        const cooldownTime = 60 * 1000;
+        const elapsed = now - lastActionTime;
+
+        if (elapsed < cooldownTime) {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            let remaining = Math.ceil((cooldownTime - elapsed) / 1000);
+            btn.innerText = `⏳ รอ ${remaining}s`;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if (remaining > 0) {
+                    btn.innerText = `⏳ รอ ${remaining}s`;
+                } else {
+                    clearInterval(interval);
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.innerText = originalText;
+                }
+            }, 1000);
+        }
+    }
+
     // ฟังก์ชันสลับความสว่าง (ขาว-ดำ) ตามสไลด์บาร์
     function changeThemeBrightness(val) {
         const body = document.getElementById('mainBody');
@@ -558,6 +624,10 @@
 
     function submitReview(e, novelId) {
         e.preventDefault();
+        
+        // เช็ค Cooldown 60 วินาที สำหรับการส่งรีวิว
+        if (!checkCooldown('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว')) return;
+
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อนเขียนรีวิว"); openAuthModal('login'); return; }
         const rating = parseInt(document.getElementById(`reviewRating_${novelId}`).value);
@@ -566,6 +636,10 @@
         let reviews = getReviews();
         reviews.unshift({ id: "rev_" + Date.now(), novelId, userEmail: currentUser.email, userName: currentUser.name, rating, comment, time: new Date().toLocaleString('th-TH') });
         saveReviews(reviews);
+        
+        // เริ่มจับเวลา Cooldown
+        startCooldownTimer('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว');
+        
         alert("ส่งรีวิวสำเร็จ! ⭐");
         openNovelDetail(novelId);
     }
@@ -1022,7 +1096,6 @@
         t.status = 'approved';
         localStorage.setItem('mynovel_topups', JSON.stringify(topups));
 
-        // อัปเดตฝั่ง Cloud ผ่านฟังก์ชัน global หากมี หรือใช้ผ่าน Firebase ในโมดูล
         if (window.updateUserCoinsCloud) {
             window.updateUserCoinsCloud(t.email, coinsToAdd);
         }
@@ -1171,6 +1244,10 @@
 
     function sendUserMessage(e) {
         e.preventDefault();
+        
+        // เช็ค Cooldown 60 วินาที สำหรับการส่งข้อความแชทซัพพอร์ต
+        if (!checkCooldown('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง')) return;
+
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) return;
         const input = document.getElementById('userMsgInput');
@@ -1181,6 +1258,10 @@
         chats[currentUser.email].push({ sender: 'user', userName: currentUser.name, text, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
         localStorage.setItem('mynovel_chats', JSON.stringify(chats));
         input.value = '';
+        
+        // เริ่มจับเวลา Cooldown
+        startCooldownTimer('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง');
+
         loadUserChat();
     }
 
@@ -1424,7 +1505,7 @@
                 <form onsubmit="submitReview(event, '${novel.id}')" class="bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl mb-4 space-y-2.5">
                     <select id="reviewRating_${novel.id}" class="border border-zinc-700 bg-zinc-900 text-white rounded px-2 py-1 text-xs"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select>
                     <textarea id="reviewComment_${novel.id}" rows="2" required placeholder="เขียนรีวิว..." class="w-full px-3 py-2 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs"></textarea>
-                    <button type="submit" class="bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">ส่งรีวิว</button>
+                    <button type="submit" id="submitReviewBtn_${novel.id}" class="bg-red-800 hover:bg-red-900 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">ส่งรีวิว</button>
                 </form>
                 <div class="space-y-2.5">${allReviews.length === 0 ? '<p class="text-xs text-zinc-500">ยังไม่มีรีวิว</p>' : allReviews.map(r => `
                     <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 text-xs space-y-1">
@@ -1435,6 +1516,8 @@
                 `).join('')}</div>
             </div>
         `;
+        // เรียกตรวจสอบคูลดาวน์ของปุ่มรีวิวเรื่องนี้ทันทีที่เรนเดอร์เสร็จ
+        initButtonCooldown('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว');
     }
 
     function backToDetail() { if (activeNovelId) openNovelDetail(activeNovelId); else goHome(); }
@@ -1906,6 +1989,9 @@
 
     function toggleSearch() { document.getElementById('searchBar').classList.toggle('hidden'); }
     function escapeHtml(str) { return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+
+    // ตรวจสอบคูลดาวน์แชทค้างไว้ตอนเปิดหน้าเว็บ
+    initButtonCooldown('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง');
 
     updateNotifBadge();
     renderHomeNovels();
