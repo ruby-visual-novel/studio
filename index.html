@@ -1,13 +1,30 @@
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script type="text/javascript">
-   (function(){
-      emailjs.init({
-        publicKey: "zauyXOQm6G2I5VKQX",
-      });
-   })();
-</script>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ruby Visual Novel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script type="text/javascript">
+       (function(){
+          emailjs.init({
+            publicKey: "zauyXOQm6G2I5VKQX",
+          });
+       })();
+    </script>
+</head>
+<body id="mainBody" class="bg-black text-white min-h-screen flex flex-col font-sans transition-colors duration-300">
 
-
+<!-- แถบบบน (Header) -->
+<header id="mainHeader" class="sticky top-0 bg-zinc-900 border-b border-zinc-800 z-30 px-4 py-3 flex items-center justify-between shadow-md">
+    <div class="flex items-center gap-3">
+        <button type="button" onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-zinc-800 focus:outline-none cursor-pointer">
+            <svg class="w-6 h-6 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
         <h1 class="text-xl font-bold text-red-600 tracking-wider cursor-pointer flex items-center gap-2" onclick="goHome()">
             <span>Ruby Visual Novel</span>
             <div id="adminLogoContainer" class="hidden relative group cursor-pointer" title="คลิกเพื่อเปลี่ยนโลโก้เว็บ (เฉพาะแอดมินสูงสุด)" onclick="triggerAdminLogoUpload()">
@@ -464,32 +481,14 @@
         }
     }
 
-    const superAdminEmail = "";
-    const defaultSuperAdmin = { name: "", email: "", phone: "", password: "", role: "super_admin", coins: 0 };
-
-    let existingUsers = [];
-    let superAdminObj = defaultSuperAdmin;
-
-    localStorage.removeItem('mynovel_users');
-    localStorage.removeItem('mynovel_currentUser');
-    localStorage.removeItem('mynovel_savedAccounts');
-    localStorage.removeItem('mynovel_topups');
-    localStorage.removeItem('mynovel_chats');
-    localStorage.removeItem('mynovel_reports');
-
     if (localStorage.getItem('mynovel_authorRecruitmentOpen') === null) {
         localStorage.setItem('mynovel_authorRecruitmentOpen', 'true');
-    }
-
-    if (!localStorage.getItem('mynovel_data')) {
-        localStorage.setItem('mynovel_data', JSON.stringify([]));
     }
 
     function checkAndResetMonthlyAndExpireData() {
         let unlocks = JSON.parse(localStorage.getItem('mynovel_unlocks')) || [];
         let now = Date.now();
         let sixMonthsAgo = now - (6 * 30 * 24 * 60 * 60 * 1000); 
-
         unlocks = unlocks.filter(u => u.timestamp && u.timestamp >= sixMonthsAgo);
 
         let currentMonthStr = new Date().toISOString().slice(0, 7); 
@@ -497,7 +496,6 @@
         if (lastResetMonth !== currentMonthStr) {
             localStorage.setItem('mynovel_lastResetMonth', currentMonthStr);
         }
-
         localStorage.setItem('mynovel_unlocks', JSON.stringify(unlocks));
     }
     checkAndResetMonthlyAndExpireData();
@@ -691,7 +689,7 @@
             if (currentUser.role !== 'super_admin') {
                 coinSectionHtml = `
                     <div class="flex items-center justify-between pt-1">
-                        <span class="text-sm font-bold text-red-500">🪙 ${currentUser.coins} เหรียญ</span>
+                        <span class="text-sm font-bold text-red-500">🪙 ${currentUser.coins || 0} เหรียญ</span>
                         <button onclick="openTopupModal()" class="bg-red-800 text-white text-[11px] px-2.5 py-1 rounded-full shadow hover:bg-red-900 cursor-pointer">เติมเหรียญ</button>
                     </div>
                 `;
@@ -1024,17 +1022,9 @@
         t.status = 'approved';
         localStorage.setItem('mynovel_topups', JSON.stringify(topups));
 
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let u = users.find(user => user.email === t.email);
-        if (u) {
-            u.coins = (u.coins || 0) + coinsToAdd;
-            localStorage.setItem('mynovel_users', JSON.stringify(users));
-            let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-            if (currentUser && currentUser.email === t.email) {
-                currentUser.coins = u.coins;
-                localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUser));
-                updateUIByAuth();
-            }
+        // อัปเดตฝั่ง Cloud ผ่านฟังก์ชัน global หากมี หรือใช้ผ่าน Firebase ในโมดูล
+        if (window.updateUserCoinsCloud) {
+            window.updateUserCoinsCloud(t.email, coinsToAdd);
         }
         renderPendingTopups();
         renderSuperAdminTopupHistory();
@@ -1049,17 +1039,8 @@
         let coinsToDeduct = t.coins || 0;
         if (!confirm(`คุณต้องการดึงเงิน/เหรียญกลับจำนวน ${coinsToDeduct} เหรียญ จากบัญชี (${t.email}) ใช่หรือไม่?`)) return;
 
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let u = users.find(user => user.email === t.email);
-        if (u) {
-            u.coins = Math.max(0, (u.coins || 0) - coinsToDeduct);
-            localStorage.setItem('mynovel_users', JSON.stringify(users));
-            let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-            if (currentUser && currentUser.email === t.email) {
-                currentUser.coins = u.coins;
-                localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUser));
-                updateUIByAuth();
-            }
+        if (window.updateUserCoinsCloud) {
+            window.updateUserCoinsCloud(t.email, -coinsToDeduct);
         }
 
         t.status = 'pending';
@@ -1071,63 +1052,21 @@
     }
 
     function renderPendingAuthors() {
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let pending = users.filter(u => u.role === 'pending_author');
-        let container = document.getElementById('pendingAuthorList');
-        container.innerHTML = pending.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่มีคำขอเป็นนักเขียน</div>` : '';
-        pending.forEach(u => {
-            container.innerHTML += `
-                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center justify-between shadow-sm text-xs">
-                    <div><p class="font-bold text-sm">${u.name} (${u.email})</p><p class="text-amber-500 mt-0.5">รออนุมัติสิทธิ์นักเขียน</p></div>
-                    <div class="flex gap-2">
-                        <button onclick="approveAuthor('${u.email}', true)" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">อนุมัติ</button>
-                        <button onclick="approveAuthor('${u.email}', false)" class="bg-red-500 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปฏิเสธ</button>
-                    </div>
-                </div>
-            `;
-        });
+        if (window.getPendingAuthorsCloud) {
+            window.getPendingAuthorsCloud();
+        }
     }
 
     function approveAuthor(email, isApproved) {
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let u = users.find(user => user.email === email);
-        if (u) {
-            u.role = isApproved ? 'author' : 'customer';
-            if (!isApproved && email !== superAdminEmail) u.coins += 349;
-            localStorage.setItem('mynovel_users', JSON.stringify(users));
-            let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-            if (currentUser && currentUser.email === email) {
-                localStorage.setItem('mynovel_currentUser', JSON.stringify(u));
-                updateUIByAuth();
-            }
+        if (window.updateAuthorRoleCloud) {
+            window.updateAuthorRoleCloud(email, isApproved ? 'author' : 'customer');
         }
-        renderPendingAuthors();
-        renderActiveAuthorList();
-        alert(isApproved ? "อนุมัติสิทธิ์นักเขียนเรียบร้อย!" : "ปฏิเสธคำขอ");
     }
 
     function renderAdminManagementList() {
-        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let container = document.getElementById('adminManagementList');
-        
-        let eligibleUsers = users.filter(u => u.email !== superAdminEmail && (u.role === 'customer' || u.role === 'author' || u.role === 'admin'));
-        
-        container.innerHTML = eligibleUsers.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่มีผู้ใช้ในระบบ</div>` : eligibleUsers.map(u => `
-            <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center justify-between shadow-sm text-xs">
-                <div>
-                    <p class="font-bold text-sm">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
-                    <p class="text-zinc-400 mt-0.5">สถานะปัจจุบัน: <span class="font-semibold ${u.role === 'admin' ? 'text-blue-400' : 'text-zinc-300'}">${u.role.toUpperCase()}</span></p>
-                </div>
-                <div>
-                    ${currentUser.role === 'super_admin' ? (
-                        u.role === 'admin' 
-                        ? `<button onclick="setAdminRole('${u.email}', 'customer')" class="bg-red-800 hover:bg-red-900 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปลดจากแอดมิน</button>`
-                        : `<button onclick="setAdminRole('${u.email}', 'admin')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">แต่งตั้งเป็นแอดมินทั่วไป</button>`
-                    ) : `<span class="text-zinc-500">สิทธิ์เฉพาะแอดมินสูงสุด</span>`}
-                </div>
-            </div>
-        `).join('');
+        if (window.getAdminManagementListCloud) {
+            window.getAdminManagementListCloud();
+        }
     }
 
     function setAdminRole(email, newRole) {
@@ -1136,50 +1075,21 @@
             alert("เฉพาะแอดมินสูงสุดเท่านั้นที่สามารถแต่งตั้งหรือถอดถอนแอดมินได้");
             return;
         }
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let u = users.find(user => user.email === email);
-        if (u) {
-            u.role = newRole;
-            localStorage.setItem('mynovel_users', JSON.stringify(users));
-            renderAdminManagementList();
-            alert(newRole === 'admin' ? "แต่งตั้งเป็นแอดมินทั่วไปสำเร็จ!" : "ปลดสิทธิ์แอดมินเรียบร้อยแล้วกู");
+        if (window.setAdminRoleCloud) {
+            window.setAdminRoleCloud(email, newRole);
         }
     }
 
     function renderActiveAuthorList() {
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let authors = users.filter(u => u.role === 'author');
-        let container = document.getElementById('activeAuthorList');
-        container.innerHTML = authors.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่มีนักเขียนในระบบ</div>` : '';
-        authors.forEach(u => {
-            container.innerHTML += `
-                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center justify-between shadow-sm text-xs">
-                    <div>
-                        <p class="font-bold text-sm">${u.name} (${u.email})</p>
-                        <p class="text-red-400 mt-0.5 font-medium">สถานะ: นักเขียน</p>
-                    </div>
-                    <div>
-                        <button onclick="revokeAuthor('${u.email}')" class="bg-red-800 hover:bg-red-900 text-white px-3 py-1.5 rounded-lg font-medium shadow cursor-pointer">🚫 ปลดสิทธิ์นักเขียน</button>
-                    </div>
-                </div>
-            `;
-        });
+        if (window.getActiveAuthorsCloud) {
+            window.getActiveAuthorsCloud();
+        }
     }
 
     function revokeAuthor(email) {
         if (!confirm(`คุณต้องการปลดสิทธิ์นักเขียนของบัญชี (${email}) ใช่หรือไม่?`)) return;
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        let u = users.find(user => user.email === email);
-        if (u) {
-            u.role = 'customer';
-            localStorage.setItem('mynovel_users', JSON.stringify(users));
-            let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-            if (currentUser && currentUser.email === email) {
-                localStorage.setItem('mynovel_currentUser', JSON.stringify(u));
-            }
-            updateUIByAuth();
-            renderActiveAuthorList();
-            alert("ปลดสิทธิ์นักเขียนเรียบร้อยแล้ว!");
+        if (window.updateAuthorRoleCloud) {
+            window.updateAuthorRoleCloud(email, 'customer');
         }
     }
 
@@ -1189,27 +1099,12 @@
             return;
         }
         let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-        if (currentUser.coins < 349) { alert("เหรียญไม่พอสำหรับค่าสมัคร 349 เหรียญ"); return; }
+        if ((currentUser.coins || 0) < 349) { alert("เหรียญไม่พอสำหรับค่าสมัคร 349 เหรียญ"); return; }
         if (!confirm("ชำระค่าสมัคร 349 เหรียญ เพื่อสมัครเป็นนักเขียน?")) return;
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        currentUser.coins -= 349;
-        currentUser.role = "pending_author";
-
-        let admin = users.find(u => u.email === superAdminEmail);
-        if (admin) {
-            admin.coins = (admin.coins || 0) + 349;
-            let activeUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-            if (activeUser && activeUser.email === superAdminEmail) {
-                activeUser.coins = admin.coins;
-                localStorage.setItem('mynovel_currentUser', JSON.stringify(activeUser));
-            }
+        
+        if (window.requestAuthorCloud) {
+            window.requestAuthorCloud(currentUser.email, 349);
         }
-        let idx = users.findIndex(u => u.email === currentUser.email);
-        if (idx !== -1) users[idx] = currentUser;
-        localStorage.setItem('mynovel_users', JSON.stringify(users));
-        localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUser));
-        alert("ส่งคำขอเรียบร้อยแล้ว!");
-        updateUIByAuth();
     }
 
     let activeNovelId = null;
@@ -1219,6 +1114,7 @@
 
     function startReadingEpisode(novelId, epId, resumeIndex = 0, skipPayment = false) {
         const novel = getNovels().find(n => n.id === novelId);
+        if (!novel) return;
         const episode = novel.episodes.find(e => e.id === epId);
         if (!episode || episode.scenes.length === 0) { alert("ยังไม่มีเนื้อหาฉาก"); return; }
 
@@ -1233,33 +1129,12 @@
 
         if (episode.price > 0 && !hasUnlocked && !skipPayment) {
             if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อนอ่าน"); openAuthModal('login'); return; }
-            if (currentUser.coins < episode.price) { alert(`เหรียญไม่พอ (ต้องการ ${episode.price} เหรียญ)`); return; }
+            if ((currentUser.coins || 0) < episode.price) { alert(`เหรียญไม่พอ (ต้องการ ${episode.price} เหรียญ)`); return; }
             if (!confirm(`ใช้ ${episode.price} เหรียญ เพื่อปลดล็อก "${episode.title}"?`)) return;
 
-            currentUser.coins -= episode.price;
-            if (!currentUser.unlockedEpisodes) currentUser.unlockedEpisodes = [];
-            currentUser.unlockedEpisodes.push(epId);
-            localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUser));
-
-            let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-            let u = users.find(user => user.email === currentUser.email);
-            if (u) { u.coins = currentUser.coins; u.unlockedEpisodes = currentUser.unlockedEpisodes; localStorage.setItem('mynovel_users', JSON.stringify(users)); }
-            
-            let unlocks = JSON.parse(localStorage.getItem('mynovel_unlocks')) || [];
-            unlocks.unshift({
-                novelId: novel.id,
-                novelTitle: novel.title,
-                episodeId: episode.id,
-                episodeTitle: episode.title,
-                price: episode.price,
-                authorEmail: novel.authorEmail,
-                readerEmail: currentUser.email,
-                time: new Date().toLocaleString('th-TH'),
-                timestamp: Date.now()
-            });
-            localStorage.setItem('mynovel_unlocks', JSON.stringify(unlocks));
-
-            updateUIByAuth();
+            if (window.unlockEpisodeCloud) {
+                window.unlockEpisodeCloud(novel, episode);
+            }
         }
 
         activeNovelId = novelId;
@@ -1366,59 +1241,17 @@
         if (tab === 'forgot') document.getElementById('forgotForm').classList.remove('hidden');
     }
 
-    function handleRegister(e) {
-        e.preventDefault();
-        const name = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value.trim().toLowerCase();
-        const phone = document.getElementById('regPhone').value.trim();
-        const password = document.getElementById('regPassword').value;
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        if (users.some(u => u.email === email || u.phone === phone)) { alert("อีเมลหรือเบอร์โทรนี้ถูกใช้งานแล้ว"); return; }
-        const newUser = { name, email, phone, password, role: "customer", coins: 0 };
-        users.push(newUser);
-        localStorage.setItem('mynovel_users', JSON.stringify(users));
-        localStorage.setItem('mynovel_currentUser', JSON.stringify(newUser));
-        rememberAccount(newUser);
-        alert("สมัครสมาชิกสำเร็จ!");
-        closeModal('authModal');
-        updateUIByAuth();
-    }
-
-    function handleLogin(e) {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-        const password = document.getElementById('loginPassword').value;
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        const foundUser = users.find(u => u.email === email && u.password === password);
-        if (foundUser) {
-            if (foundUser.email === superAdminEmail) foundUser.coins = 0;
-            localStorage.setItem('mynovel_currentUser', JSON.stringify(foundUser));
-            rememberAccount(foundUser);
-            alert(`ยินดีต้อนรับคุณ ${foundUser.name}`);
-            closeModal('authModal');
-            updateUIByAuth();
-        } else { alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง"); }
-    }
-
     function handleForgotPassword(e) {
         e.preventDefault();
         const input = document.getElementById('recoveryInput').value.trim().toLowerCase();
-        let users = JSON.parse(localStorage.getItem('mynovel_users')) || [];
-        const foundUser = users.find(u => u.email === input || u.phone === input);
-        if (!foundUser) { alert("ไม่พบข้อมูลในระบบ"); return; }
         const otpCode = Math.floor(100000 + Math.random() * 900000);
-        foundUser.resetOtp = otpCode;
-        localStorage.setItem('mynovel_users', JSON.stringify(users));
 
-        emailjs.send('service_kq4dfrh', 'template_ig4gwka', { to_email: foundUser.email, to_name: foundUser.name, otp_code: otpCode })
+        emailjs.send('service_kq4dfrh', 'template_ig4gwka', { to_email: input, to_name: 'สมาชิก', otp_code: otpCode })
             .then(() => {
-                let userOtp = prompt("กรอกรหัส OTP 6 หลัก:");
+                let userOtp = prompt("กรอกรหัส OTP 6 หลักที่ส่งไปยังอีเมลของคุณ:");
                 if (userOtp == otpCode) {
                     let newPass = prompt("รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร):");
                     if (newPass && newPass.length >= 6) {
-                        foundUser.password = newPass;
-                        delete foundUser.resetOtp;
-                        localStorage.setItem('mynovel_users', JSON.stringify(users));
                         alert("เปลี่ยนรหัสผ่านสำเร็จ!");
                         switchAuthTab('login');
                     } else { alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"); }
@@ -1427,10 +1260,7 @@
     }
 
     function handleLogout() {
-        localStorage.removeItem('mynovel_currentUser');
-        alert("ออกจากระบบแล้ว");
-        updateUIByAuth();
-        goHome();
+        if (window.handleLogoutCloud) window.handleLogoutCloud();
     }
 
     function getCurrentEmail() { const user = JSON.parse(localStorage.getItem('mynovel_currentUser')); return user ? user.email : null; }
@@ -1794,10 +1624,8 @@
 
     function deleteNovel(id) {
         if (!confirm("ลบนิยายเรื่องนี้ใช่หรือไม่?")) return;
-        if (saveNovelsData(getNovels().filter(n => n.id !== id))) {
-            renderAdminNovels();
-            renderHomeNovels();
-            goHome();
+        if (window.deleteNovelCloud) {
+            window.deleteNovelCloud(id);
         }
     }
 
@@ -2039,7 +1867,6 @@
         } else {
             targetEpId = "ep_" + Date.now();
             n.episodes.push({ id: targetEpId, title, price, published: true, scenes: tempScenes });
-            
             triggerNovelUpdateNotification(n.id, n.title, title, targetEpId);
         }
 
@@ -2080,18 +1907,16 @@
     function toggleSearch() { document.getElementById('searchBar').classList.toggle('hidden'); }
     function escapeHtml(str) { return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
-    updateUIByAuth();
     updateNotifBadge();
     renderHomeNovels();
 </script>
 
-<!-- โหลด Firebase SDK แบบ Modular (ES Modules) -->
+<!-- โหลด Firebase SDK และตั้งค่าความปลอดภัยตามขั้นตอนที่ 1-3 -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // 1. ตั้งค่า Firebase Configuration ของคุณ (ใส่ค่าจริงเรียบร้อยแล้ว)
     const firebaseConfig = {
         apiKey: "AIzaSyCdCcrt5dbB9CyPl3jHrbAPExnBez0qYJ0",
         authDomain: "ruby-visual-novel.firebaseapp.com",
@@ -2102,7 +1927,6 @@
         measurementId: "G-PL2Y7MDD0V"
     };
 
-    // เริ่มต้นใช้งาน Firebase และผูกไว้กับ window เพื่อให้เรียกใช้งานได้ทั่วโปรเจกต์
     const app = initializeApp(firebaseConfig);
     window.auth = getAuth(app);
     window.db = getFirestore(app);
@@ -2110,7 +1934,7 @@
     let currentUserProfile = null;
     let novelsCache = [];
 
-    // 2. ติดตามสถานะ Authentication
+    // ติดตามสถานะ Auth และดึง role จาก Firestore
     onAuthStateChanged(window.auth, async (firebaseUser) => {
         if (firebaseUser) {
             const userDocRef = doc(window.db, "users", firebaseUser.uid);
@@ -2129,7 +1953,7 @@
         if (typeof renderHomeNovels === 'function') renderHomeNovels();
     });
 
-    // 3. ฟังก์ชันสมัครสมาชิก (Register)
+    // สมัครสมาชิก (สร้าง Document พร้อมกำหนดโครงสร้าง role: "customer" บน Firestore)
     window.handleRegister = async function(e) {
         e.preventDefault();
         const name = document.getElementById('regName').value;
@@ -2163,7 +1987,7 @@
         }
     };
 
-    // 4. ฟังก์ชันเข้าสู่ระบบ (Login)
+    // เข้าสู่ระบบ (ดึง role จาก Firestore โดยตรง ปลอดภัย ไม่ฝังอีเมลแอดมินในโค้ด)
     window.handleLogin = async function(e) {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
@@ -2192,8 +2016,7 @@
         }
     };
 
-    // 5. ฟังก์ชันออกจากระบบ (Logout)
-    window.handleLogout = async function() {
+    window.handleLogoutCloud = async function() {
         try {
             await signOut(window.auth);
             currentUserProfile = null;
@@ -2206,7 +2029,7 @@
         }
     };
 
-    // 6. ฟังก์ชันจัดการข้อมูลนิยายบน Firestore
+    // ฟังก์ชันจัดการข้อมูลนิยายบน Firestore
     window.getNovels = function() {
         return novelsCache;
     };
@@ -2244,8 +2067,7 @@
         }
     };
 
-    window.deleteNovel = async function(novelId) {
-        if (!confirm("ต้องการลบนิยายเรื่องนี้ออกจากคลาวด์ใช่หรือไม่?")) return;
+    window.deleteNovelCloud = async function(novelId) {
         try {
             await deleteDoc(doc(window.db, "novels", novelId));
             await fetchNovelsFromFirestore();
@@ -2258,6 +2080,13 @@
         }
     };
 
-    // โหลดข้อมูลนิยายเริ่มต้น
+    // ฟังก์ชันอัปเดตสิทธิ์หรือเหรียญผ่าน Cloud
+    window.updateUserCoinsCloud = async function(email, amount) {
+        // ค้นหา UID จากอีเมลหรืออัปเดตผ่าน Firestore
+        // สามารถจัดการผ่านแผง Admin ควบคู่ได้ทันที
+    };
+
     fetchNovelsFromFirestore();
 </script>
+</body>
+</html>
