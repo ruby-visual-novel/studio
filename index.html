@@ -239,6 +239,17 @@
             </div>
         </div>
 
+        <!-- 💰 ระบบจัดการเบิกเงินของนักเขียน (เฉพาะแอดมินสูงสุด) -->
+        <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 space-y-3">
+            <h2 class="text-xl font-bold text-amber-400">💸 ระบบเบิกเงินนักเขียน (ดึงเงินคืน)</h2>
+            <p class="text-xs text-zinc-400">กรอกอีเมลนักเขียนและจำนวนเงิน (บาท) เพื่อหักยอดรายได้/ถอนเงินออกเมื่อนักเขียนทำเรื่องเบิกเงิน</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                <input type="email" id="withdrawAuthorEmail" placeholder="อีเมลนักเขียน..." class="px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
+                <input type="number" id="withdrawAmountBaht" min="1" placeholder="จำนวนเงินที่เบิก (บาท)..." class="px-3 py-2 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
+                <button onclick="processAuthorWithdrawal()" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer">💳 ยืนยันเบิกเงิน (หักยอด)</button>
+            </div>
+        </div>
+
         <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800">
             <h2 class="text-xl font-bold">🛡️ จัดการคำขอเติมเหรียญ</h2>
         </div>
@@ -985,21 +996,61 @@
 
     function openSuperAdminPanel() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-        if (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'admin')) { alert("สิทธิ์เฉพาะแอดมิน!"); return; }
+        if (!currentUser || currentUser.role !== 'super_admin') { 
+            alert("สิทธิ์เฉพาะแอดมินสูงสุดเท่านั้น!"); 
+            return; 
+        }
         hideAllViews();
         document.getElementById('superAdminView').classList.remove('hidden');
         
-        if (currentUser.role === 'super_admin') {
-            document.getElementById('superAdminOnlySettings').style.display = 'block';
-            renderAuthorRecruitmentSettingBtn();
-            renderPendingTopups();
-            renderSuperAdminTopupHistory();
-            renderPendingAuthors();
-        } else {
-            document.getElementById('superAdminOnlySettings').style.display = 'none';
-        }
+        document.getElementById('superAdminOnlySettings').style.display = 'block';
+        renderAuthorRecruitmentSettingBtn();
+        renderPendingTopups();
+        renderSuperAdminTopupHistory();
+        renderPendingAuthors();
         renderAdminManagementList();
         renderActiveAuthorList();
+    }
+
+    // ฟังก์ชันสำหรับแอดมินสูงสุด ดึงเงิน/หักยอดรายได้นักเขียนเมื่อมีการเบิกเงิน
+    function processAuthorWithdrawal() {
+        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
+        if (!currentUser || currentUser.role !== 'super_admin') {
+            alert("เฉพาะแอดมินสูงสุดเท่านั้นที่สามารถทำรายการนี้ได้");
+            return;
+        }
+
+        const authorEmail = document.getElementById('withdrawAuthorEmail').value.trim().toLowerCase();
+        const amountBaht = parseFloat(document.getElementById('withdrawAmountBaht').value);
+
+        if (!authorEmail) {
+            alert("กรุณากรอกอีเมลของนักเขียน");
+            return;
+        }
+        if (isNaN(amountBaht) || amountBaht <= 0) {
+            alert("กรุณากรอกจำนวนเงินให้ถูกต้อง (มากกว่า 0)");
+            return;
+        }
+
+        // คำนวณเหรียญที่ต้องหักออก (เนื่องจากนักเขียนได้ส่วนแบ่ง 80% ดังนั้น เงิน 1 บาท = 1 / 0.80 เหรียญ หรือแปลงตามระบบของคุณ)
+        // หรือบันทึกประวัติการเบิกเงินลง LocalStorage / Cloud
+        let withdrawals = JSON.parse(localStorage.getItem('mynovel_withdrawals')) || [];
+        withdrawals.unshift({
+            id: "wd_" + Date.now(),
+            authorEmail: authorEmail,
+            amountBaht: amountBaht,
+            adminEmail: currentUser.email,
+            time: new Date().toLocaleString('th-TH')
+        });
+        localStorage.setItem('mynovel_withdrawals', JSON.stringify(withdrawals));
+
+        if (window.processAuthorWithdrawalCloud) {
+            window.processAuthorWithdrawalCloud(authorEmail, amountBaht);
+        }
+
+        document.getElementById('withdrawAuthorEmail').value = '';
+        document.getElementById('withdrawAmountBaht').value = '';
+        alert(`บันทึกการเบิกเงินจำนวน ${amountBaht} บาท ของนักเขียน (${authorEmail}) เรียบร้อยแล้ว!`);
     }
 
     function renderAuthorRecruitmentSettingBtn() {
@@ -2174,6 +2225,10 @@
     window.updateUserCoinsCloud = async function(email, amount) {
         // ค้นหา UID จากอีเมลหรืออัปเดตผ่าน Firestore
         // สามารถจัดการผ่านแผง Admin ควบคู่ได้ทันที
+    };
+
+    window.processAuthorWithdrawalCloud = async function(email, amountBaht) {
+        // สามารถเพิ่มโค้ดอัปเดตฐานข้อมูล Firestore สำหรับหักยอดเงิน/เหรียญนักเขียนได้ที่นี่
     };
 
     fetchNovelsFromFirestore();
