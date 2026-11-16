@@ -157,8 +157,11 @@
     </div>
     
     <div class="bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[650px] relative border border-zinc-800">
-        <!-- Audio BGM element -->
+        <!-- Audio & YouTube BGM Player -->
         <audio id="bgmAudioPlayer" loop class="hidden"></audio>
+        <div id="youtubeBgmContainer" class="hidden w-0 h-0 overflow-hidden pointer-events-none">
+            <iframe id="youtubeBgmIframe" width="200" height="200" src="" allow="autoplay; encrypted-media"></iframe>
+        </div>
 
         <div id="sceneBg" class="flex-1 bg-cover bg-center flex items-end justify-center pb-8 relative transition-all duration-500">
             <div class="text-center text-white bg-zinc-950/85 px-6 py-4 rounded-xl backdrop-blur-md max-w-[92%] border border-white/15 shadow-2xl">
@@ -227,12 +230,19 @@
     </div>
 </div>
 
-<!-- Modal เลือกรูปจากคลัง (Asset Picker สำหรับเลือกใส่ฉาก) -->
+<!-- Modal เลือกรูปจากคลัง (Asset Picker สำหรับเลือกใส่ฉาก/ปก และอัปโหลดจากเครื่องได้ทันที) -->
 <div id="assetPickerModal" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
-    <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-5 shadow-xl relative max-h-[80vh] flex flex-col">
-        <button onclick="closeModal('assetPickerModal')" class="absolute top-4 right-4 text-zinc-400 hover:text-white">✕</button>
-        <h3 class="text-md font-bold text-red-500 mb-3">📂 เลือกรูปภาพจากคลัง</h3>
-        <div id="assetPickerGrid" class="grid grid-cols-3 gap-3 overflow-y-auto flex-1 p-1"></div>
+    <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-5 shadow-xl relative max-h-[85vh] flex flex-col">
+        <button type="button" onclick="closeModal('assetPickerModal')" class="absolute top-4 right-4 text-zinc-400 hover:text-white cursor-pointer">✕</button>
+        <h3 class="text-md font-bold text-red-500 mb-1">📂 เลือกรูปภาพจากคลัง (ไม่ต้องอัปซ้ำ)</h3>
+        <p class="text-[11px] text-zinc-400 mb-3">คลิกเลือกรูปที่เคยอัปโหลดไว้ด้านล่าง หรืออัปโหลดรูปใหม่จากเครื่องเพื่อเก็บเข้าคลังและใช้งานทันที</p>
+        <div class="mb-3 flex items-center gap-2">
+            <input type="file" id="pickerDirectUploadFile" accept="image/*" class="hidden" onchange="handleDirectPickerUpload(event)">
+            <button type="button" onclick="document.getElementById('pickerDirectUploadFile').click()" class="bg-red-800 hover:bg-red-900 text-white text-xs px-3 py-2 rounded-lg font-medium cursor-pointer shadow">
+                📤 อัปโหลดรูปใหม่จากเครื่อง (บันทึกเข้าคลังอัตโนมัติ)
+            </button>
+        </div>
+        <div id="assetPickerGrid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto flex-1 p-1"></div>
     </div>
 </div>
 
@@ -679,9 +689,8 @@
     }
 
     function compressImageFile(file, maxWidth, quality, callback) {
-        const maxSizeMB = 2;
-        if (file.size > maxSizeMB * 1024 * 1024) {
-            alert(`⚠️ ไฟล์รูปภาพมีขนาดใหญ่เกินไป (${(file.size / (1024 * 1024)).toFixed(2)} MB)\nกรุณาเลือกไฟล์ที่มีขนาดไม่เกิน ${maxSizeMB} MB`);
+        if (!file.type.startsWith('image/')) {
+            alert('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
             return;
         }
         const reader = new FileReader();
@@ -702,6 +711,9 @@
                 const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
                 callback(compressedBase64);
             };
+            img.onerror = function() {
+                alert('ไม่สามารถอ่านไฟล์รูปภาพนี้ได้ กรุณาลองไฟล์อื่น');
+            };
             img.src = event.target.result;
         };
         reader.readAsDataURL(file);
@@ -717,12 +729,33 @@
     function handleAssetUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-        compressImageFile(file, 800, 0.8, function(base64) {
-            let assets = getAssetLibrary();
-            assets.unshift({ id: 'img_' + Date.now(), data: base64, time: new Date().toLocaleString('th-TH') });
-            saveAssetLibrary(assets);
-            renderAssetLibraryGrid();
-            alert("อัปโหลดรูปภาพเข้าคลังสำเร็จ!");
+        compressImageFile(file, 720, 0.7, function(base64) {
+            try {
+                let assets = getAssetLibrary();
+                assets.unshift({ id: 'img_' + Date.now(), name: file.name, data: base64, time: new Date().toLocaleString('th-TH') });
+                saveAssetLibrary(assets);
+                renderAssetLibraryGrid();
+                alert("อัปโหลดรูปภาพเข้าคลังสำเร็จ! สามารถกด '📂 คลังรูป' ในหน้าแต่งนิยายเพื่อนำมาใช้ซ้ำได้ตลอด");
+            } catch (err) {
+                alert("⚠️ พื้นที่คลังรูปภาพเต็ม กรุณาลบรูปเก่าที่ไม่ใช้ในคลังออกบางส่วนก่อนครับ");
+            }
+            event.target.value = '';
+        });
+    }
+
+    function handleDirectPickerUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        compressImageFile(file, 720, 0.7, function(base64) {
+            try {
+                let assets = getAssetLibrary();
+                assets.unshift({ id: 'img_' + Date.now(), name: file.name, data: base64, time: new Date().toLocaleString('th-TH') });
+                saveAssetLibrary(assets);
+                selectAssetForScene(0);
+            } catch (err) {
+                alert("⚠️ พื้นที่คลังรูปภาพเต็ม กรุณาลบรูปเก่าที่ไม่ใช้ออกก่อนครับ");
+            }
+            event.target.value = '';
         });
     }
 
@@ -761,11 +794,16 @@
         activeAssetPickerIndex = index;
         let assets = getAssetLibrary();
         let grid = document.getElementById('assetPickerGrid');
-        grid.innerHTML = assets.length === 0 ? `<p class="col-span-full text-center text-zinc-500 py-6 text-xs">ไม่มีรูปในคลัง กรุณาอัปโหลดรูปผ่านเมนูสตูดิโอ หรือเลือกวางลิงก์ URL ปกติ</p>` : assets.map((a, idx) => `
-            <div onclick="selectAssetForScene('${idx}')" class="cursor-pointer rounded-lg overflow-hidden border border-zinc-700 hover:border-red-500 aspect-square">
-                <img src="${a.data}" class="w-full h-full object-cover">
-            </div>
-        `).join('');
+        grid.innerHTML = assets.length === 0 
+            ? `<p class="col-span-full text-center text-zinc-500 py-8 text-xs">ยังไม่มีรูปในคลัง กดปุ่ม "📤 อัปโหลดรูปใหม่จากเครื่อง" ด้านบนได้เลย</p>` 
+            : assets.map((a, idx) => `
+                <div onclick="selectAssetForScene(${idx})" class="cursor-pointer group relative rounded-lg overflow-hidden border border-zinc-700 hover:border-red-500 aspect-square bg-zinc-950">
+                    <img src="${a.data}" class="w-full h-full object-cover">
+                    <div class="absolute inset-x-0 bottom-0 bg-black/75 text-[10px] text-center text-white py-1 opacity-0 group-hover:opacity-100 transition">
+                        คลิกเพื่อใช้รูปนี้
+                    </div>
+                </div>
+            `).join('');
         document.getElementById('assetPickerModal').classList.remove('hidden');
     }
 
@@ -1856,9 +1894,59 @@
         initButtonCooldown('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว');
     }
 
-    function backToDetail() { 
+    function normalizeImageUrl(url) {
+        if (!url) return '';
+        url = url.trim();
+        const gdMatch = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/);
+        if (gdMatch && gdMatch[1]) {
+            return `https://lh3.googleusercontent.com/d/${gdMatch[1]}`;
+        }
+        return url;
+    }
+
+    function extractYouTubeId(url) {
+        if (!url) return null;
+        const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+        const match = url.match(regExp);
+        return match ? match[1] : null;
+    }
+
+    let currentPlayingBgmUrl = '';
+
+    function playSceneBgm(bgmUrl) {
         const audio = document.getElementById('bgmAudioPlayer');
-        if(audio) audio.pause();
+        const ytContainer = document.getElementById('youtubeBgmContainer');
+        const ytIframe = document.getElementById('youtubeBgmIframe');
+        const cleanUrl = (bgmUrl || '').trim();
+
+        if (!cleanUrl) {
+            if (audio) { audio.pause(); audio.src = ''; }
+            if (ytIframe) ytIframe.src = '';
+            if (ytContainer) ytContainer.classList.add('hidden');
+            currentPlayingBgmUrl = '';
+            return;
+        }
+
+        if (currentPlayingBgmUrl === cleanUrl) return;
+        currentPlayingBgmUrl = cleanUrl;
+
+        const ytId = extractYouTubeId(cleanUrl);
+        if (ytId) {
+            if (audio) { audio.pause(); audio.src = ''; }
+            if (ytContainer) ytContainer.classList.remove('hidden');
+            if (ytIframe) ytIframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&loop=1&playlist=${ytId}&controls=0`;
+        } else {
+            if (ytIframe) ytIframe.src = '';
+            if (ytContainer) ytContainer.classList.add('hidden');
+            if (audio) {
+                audio.src = cleanUrl;
+                audio.play().catch(e => console.log("Audio autoplay prevented:", e));
+            }
+        }
+    }
+
+    function backToDetail() { 
+        playSceneBgm('');
         if (activeNovelId) openNovelDetail(activeNovelId); else goHome(); 
     }
 
@@ -1867,21 +1955,28 @@
         const scene = currentScenes[currentSceneIndex];
         if (!scene) { alert("จบตอนแล้ว!"); backToDetail(); return; }
         
-        document.getElementById('sceneBg').style.backgroundImage = `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.8)), url('${scene.bg || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80'}')`;
+        const fallbackBg = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80';
+        const rawBg = normalizeImageUrl(scene.bg);
+        const sceneBgEl = document.getElementById('sceneBg');
+
+        if (rawBg) {
+            const testImg = new Image();
+            testImg.onload = () => {
+                sceneBgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.75)), url("${rawBg}")`;
+            };
+            testImg.onerror = () => {
+                console.warn("ไม่สามารถโหลดรูปจาก URL:", rawBg);
+                sceneBgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.75)), url("${fallbackBg}")`;
+            };
+            testImg.src = rawBg;
+        } else {
+            sceneBgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.75)), url("${fallbackBg}")`;
+        }
+
         document.getElementById('charName').innerText = scene.charName || 'ผู้บรรยาย';
         document.getElementById('dialogueText').innerText = scene.text;
         
-        // จัดการเสียง BGM
-        const audio = document.getElementById('bgmAudioPlayer');
-        if (scene.bgm && scene.bgm.trim() !== '') {
-            if (audio.src !== scene.bgm) {
-                audio.src = scene.bgm;
-                audio.play().catch(e => console.log("Audio autoplay prevented:", e));
-            }
-        } else {
-            audio.pause();
-            audio.src = '';
-        }
+        playSceneBgm(scene.bgm);
 
         if (scene.hasChoice) {
             document.getElementById('choiceBox').classList.remove('hidden');
@@ -2011,8 +2106,10 @@
     function previewCoverInput(url) {
         const previewContainer = document.getElementById('coverPreviewContainer');
         const previewImg = document.getElementById('coverPreviewImg');
-        if (url && url.trim() !== '') {
-            previewImg.src = url;
+        const cleanUrl = normalizeImageUrl(url);
+        if (cleanUrl !== '') {
+            document.getElementById('novelCoverInput').value = cleanUrl;
+            previewImg.src = cleanUrl;
             previewContainer.classList.remove('hidden');
         } else {
             previewContainer.classList.add('hidden');
@@ -2206,7 +2303,7 @@
                     </div>
                     <!-- 🎵 เพิ่มช่องเลือกเพลง BGM ประกอบฉาก -->
                     <div>
-                        <input type="text" value="${escapeHtml(scene.bgm || '')}" oninput="updateTempScene(${i}, 'bgm', this.value)" placeholder="🎵 ลิงก์ไฟล์เพลงประกอบฉาก (Audio URL เช่น .mp3)" class="w-full px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
+                        <input type="text" value="${escapeHtml(scene.bgm || '')}" oninput="updateTempScene(${i}, 'bgm', this.value)" placeholder="🎵 ลิงก์เพลง YouTube หรือไฟล์เสียง Audio URL เช่น .mp3" class="w-full px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
                     </div>
                     <div class="space-y-1">
                         <textarea rows="2" oninput="updateTempScene(${i}, 'text', this.value)" placeholder="บทสนทนา" class="w-full px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">${escapeHtml(scene.text || '')}</textarea>
@@ -2239,8 +2336,13 @@
     function previewSceneBgInput(index, url) {
         const previewDiv = document.getElementById(`sceneBgPreview_${index}`);
         const previewImg = document.getElementById(`sceneBgImg_${index}`);
-        if (url && url.trim() !== '') {
-            previewImg.src = url;
+        const cleanUrl = normalizeImageUrl(url);
+        if (cleanUrl !== '') {
+            tempScenes[index].bg = cleanUrl;
+            previewImg.onerror = () => {
+                previewImg.alt = "⚠️ โหลดรูปจากลิงก์นี้ไม่ได้";
+            };
+            previewImg.src = cleanUrl;
             previewDiv.classList.remove('hidden');
         } else {
             previewDiv.classList.add('hidden');
