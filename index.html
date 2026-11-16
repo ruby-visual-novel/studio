@@ -302,6 +302,7 @@
                 <input type="text" id="searchDirectTopupInput" onkeyup="renderPendingTopups()" placeholder="🔍 พิมพ์อีเมลลูกค้าเพื่อเติมเหรียญ..." class="px-3 py-1.5 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs w-full sm:w-64">
             </div>
             <div id="pendingTopUpList" class="space-y-3 mt-2"></div>
+            <div id="directTopupCustomerResults" class="space-y-2 mt-3"></div>
         </div>
 
         <div class="theme-card bg-zinc-900 p-4 rounded-xl shadow-sm border border-zinc-800 mt-6 space-y-3">
@@ -877,13 +878,15 @@
         const logoContainer = document.getElementById('adminLogoContainer');
         const logoImg = document.getElementById('adminHeaderLogoImg');
 
-        let currentLogo = localStorage.getItem('mynovel_site_logo_cache') || globalSiteLogoCache;
-        if (logoImg) logoImg.src = currentLogo;
+        let currentLogo = globalSiteLogoCache || localStorage.getItem('mynovel_site_logo_cache');
+        if (logoImg && currentLogo) logoImg.src = currentLogo;
 
-        if (currentUser && currentUser.role === 'super_admin') {
+        const isSuperAdmin = !!(currentUser && currentUser.role === 'super_admin');
+        if (logoContainer) {
             logoContainer.classList.remove('hidden');
-        } else {
-            logoContainer.classList.add('hidden');
+            logoContainer.classList.toggle('cursor-pointer', isSuperAdmin);
+            const uploadOverlay = logoContainer.querySelector('.absolute.inset-0');
+            if (uploadOverlay) uploadOverlay.classList.toggle('hidden', !isSuperAdmin);
         }
     }
 
@@ -896,14 +899,26 @@
     function handleAdminLogoUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-        compressImageFile(file, 200, 0.8, function(compressedBase64) {
-            globalSiteLogoCache = compressedBase64;
-            localStorage.setItem('mynovel_site_logo_cache', compressedBase64);
-            updateAdminHeaderLogo();
-            if (window.saveSiteLogoToCloud) {
-                window.saveSiteLogoToCloud(compressedBase64);
+        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
+        if (!currentUser || currentUser.role !== 'super_admin') {
+            alert("เฉพาะแอดมินสูงสุดเท่านั้นที่เปลี่ยนโลโก้ได้");
+            event.target.value = '';
+            return;
+        }
+        compressImageFile(file, 200, 0.8, async function(compressedBase64) {
+            try {
+                if (!window.saveSiteLogoToCloud) throw new Error("ระบบบันทึกโลโก้ยังไม่พร้อม");
+                await window.saveSiteLogoToCloud(compressedBase64);
+                globalSiteLogoCache = compressedBase64;
+                localStorage.setItem('mynovel_site_logo_cache', compressedBase64);
+                updateAdminHeaderLogo();
+                alert("อัปเดตโลโก้เว็บสำเร็จ ทุกคนจะเห็นโลโก้เดียวกันเมื่อโหลดหน้าเว็บ");
+            } catch (error) {
+                console.error("Logo upload failed:", error);
+                alert("บันทึกโลโก้ไม่สำเร็จ: " + (error.message || error));
+            } finally {
+                event.target.value = '';
             }
-            alert("อัปเดตโลโก้เว็บสำเร็จ (ทุกคนเห็นเหมือนกันทั่วระบบ)!");
         });
     }
 
@@ -1225,37 +1240,74 @@
         alert(!isOpen ? "เปิดระบบรับสมัครนักเขียนแล้ว!" : "ปิดระบบรับสมัครนักเขียนแล้ว!");
     }
 
-    /* 🛡️ ปรับปรุงระบบค้นหาคำขอเติมเงิน รองรับ .trim() และ .toLowerCase() ค้นหาเจอแน่นอน */
+    /* 🛡️ แสดงคำขอเติมเงินเดิม และค้นหาบัญชีลูกค้าจาก Firebase เพื่อเติมเหรียญโดยตรง */
     function renderPendingTopups() {
         let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
         let searchQuery = (document.getElementById('searchDirectTopupInput')?.value || '').toLowerCase().trim();
         let container = document.getElementById('pendingTopUpList');
         let pendingList = topups.filter(t => t.status === 'pending');
-        
+
         if (searchQuery) {
-            pendingList = pendingList.filter(t => 
-                (t.email && t.email.toLowerCase().trim().includes(searchQuery)) || 
+            pendingList = pendingList.filter(t =>
+                (t.email && t.email.toLowerCase().trim().includes(searchQuery)) ||
                 (t.name && t.name.toLowerCase().trim().includes(searchQuery))
             );
         }
 
-        container.innerHTML = pendingList.length === 0 ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบรายการแจ้งเติมเงินที่ค้นหา</div>` : '';
-        pendingList.forEach(t => {
-            container.innerHTML += `
-                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm text-xs gap-3">
-                    <div>
-                        <p class="font-bold text-sm">${escapeHtml(t.name)} (${escapeHtml(t.email)})</p>
-                        <p class="text-zinc-400 mt-0.5">เวลาแจ้ง: ${t.time}</p>
-                        <p class="mt-1 font-semibold text-amber-500">สถานะ: ⏳ รอเติมเหรียญ (แอดมินจัดการทาง LINE)</p>
+        if (container) {
+            container.innerHTML = pendingList.length === 0
+                ? `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบรายการแจ้งเติมเงินที่ค้นหา</div>`
+                : '';
+            pendingList.forEach(t => {
+                container.innerHTML += `
+                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm text-xs gap-3">
+                        <div>
+                            <p class="font-bold text-sm">${escapeHtml(t.name)} (${escapeHtml(t.email)})</p>
+                            <p class="text-zinc-400 mt-0.5">เวลาแจ้ง: ${t.time}</p>
+                            <p class="mt-1 font-semibold text-amber-500">สถานะ: ⏳ รอเติมเหรียญ (แอดมินจัดการทาง LINE)</p>
+                        </div>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <input type="number" id="inputCoins_${t.id}" min="1" value="${t.coins || ''}" placeholder="ระบุจำนวนเหรียญ" class="w-32 px-2.5 py-1.5 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
+                            <button onclick="approveTopupWithCustomCoins('${t.id}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ยืนยันเติม</button>
+                            <button onclick="approveTopupWithCustomCoins('${t.id}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปฏิเสธ</button>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="number" id="inputCoins_${t.id}" min="1" value="${t.coins || ''}" placeholder="ระบุจำนวนเหรียญ" class="w-32 px-2.5 py-1.5 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
-                        <button onclick="approveTopupWithCustomCoins('${t.id}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ยืนยันเติม</button>
-                        <button onclick="approveTopupWithCustomCoins('${t.id}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปฏิเสธ</button>
-                    </div>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
+
+        const customerResults = document.getElementById('directTopupCustomerResults');
+        if (!customerResults) return;
+        if (!searchQuery) {
+            customerResults.innerHTML = `<p class="text-[11px] text-zinc-500 text-center">พิมพ์ชื่อหรืออีเมลเพื่อค้นหาบัญชีลูกค้าทั้งหมดในระบบ</p>`;
+            return;
+        }
+        customerResults.innerHTML = `<p class="text-xs text-zinc-400 text-center py-2">กำลังค้นหาบัญชีลูกค้า...</p>`;
+        if (window.searchCustomersForDirectTopup) {
+            window.searchCustomersForDirectTopup(searchQuery);
+        } else {
+            customerResults.innerHTML = `<p class="text-xs text-red-400 text-center">ระบบค้นหาบัญชียังไม่พร้อม กรุณาลองใหม่</p>`;
+        }
+    }
+
+    async function addDirectTopupCoins(email) {
+        const input = document.getElementById('directCoins_' + encodeURIComponent(email));
+        const coins = Number.parseInt(input?.value, 10);
+        if (!Number.isInteger(coins) || coins <= 0) {
+            alert("กรุณากรอกจำนวนเหรียญให้ถูกต้อง มากกว่า 0");
+            return;
+        }
+        if (!confirm(`ยืนยันเติม ${coins} เหรียญ ให้บัญชี ${email} ใช่หรือไม่?`)) return;
+        if (!window.addCoinsToCustomerCloud) {
+            alert("ระบบเติมเหรียญยังไม่พร้อม กรุณาลองใหม่");
+            return;
+        }
+        const success = await window.addCoinsToCustomerCloud(email, coins);
+        if (success) {
+            alert(`เติม ${coins} เหรียญให้ ${email} เรียบร้อยแล้ว`);
+            renderPendingTopups();
+            renderSuperAdminTopupHistory();
+        }
     }
 
     function renderSuperAdminTopupHistory() {
@@ -2339,10 +2391,9 @@
     }
 
     window.saveSiteLogoToCloud = async function(base64Url) {
-        try {
-            const docRef = doc(window.db, "settings", "site_config");
-            await setDoc(docRef, { logoUrl: base64Url }, { merge: true });
-        } catch (e) { console.error("Error saving site logo:", e); }
+        const docRef = doc(window.db, "settings", "site_config");
+        await setDoc(docRef, { logoUrl: base64Url, logoUpdatedAt: Date.now() }, { merge: true });
+        return true;
     };
 
     onAuthStateChanged(window.auth, async (firebaseUser) => {
@@ -2511,6 +2562,78 @@
                 updateUIByAuth();
             }
         } catch (error) { console.error("Error updating user coins:", error); }
+    };
+
+    // ค้นหาบัญชีผู้ใช้จริงจาก Firestore สำหรับการเติมเหรียญโดยแอดมินสูงสุด
+    window.searchCustomersForDirectTopup = async function(searchTerm) {
+        const container = document.getElementById('directTopupCustomerResults');
+        if (!container) return;
+        try {
+            const usersSnapshot = await getDocs(collection(window.db, "users"));
+            const term = String(searchTerm || '').toLowerCase().trim();
+            const matches = [];
+            usersSnapshot.forEach((userDoc) => {
+                const user = userDoc.data();
+                const email = String(user.email || '').toLowerCase();
+                const name = String(user.name || '').toLowerCase();
+                if (term && (email.includes(term) || name.includes(term))) {
+                    matches.push({
+                        email: user.email || '',
+                        name: user.name || 'ไม่ระบุชื่อ',
+                        coins: Number(user.coins || 0)
+                    });
+                }
+            });
+            if (!matches.length) {
+                container.innerHTML = `<p class="text-xs text-zinc-500 text-center py-3">ไม่พบบัญชีลูกค้าที่ตรงกับคำค้นหา</p>`;
+                return;
+            }
+            container.innerHTML = matches.slice(0, 30).map(user => `
+                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div>
+                        <p class="font-bold text-zinc-100">${escapeHtml(user.name)} <span class="text-zinc-400 font-normal">(${escapeHtml(user.email)})</span></p>
+                        <p class="text-amber-400 mt-1">ยอดปัจจุบัน: ${user.coins.toLocaleString('th-TH')} เหรียญ</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="directCoins_${encodeURIComponent(user.email)}" min="1" step="1" placeholder="จำนวนเหรียญ" class="w-28 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs">
+                        <button onclick="addDirectTopupCoins('${String(user.email).replace(/\\/g, '\\\\\\\\').replace(/'/g, "\\\\'")}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium">เติมเหรียญ</button>
+                    </div>
+                </div>
+            `).join('') + (matches.length > 30 ? `<p class="text-[11px] text-zinc-500 text-center">พบ ${matches.length} บัญชี แสดง 30 รายการแรก กรุณาพิมพ์คำค้นหาให้เจาะจงขึ้น</p>` : '');
+        } catch (error) {
+            console.error("Customer search failed:", error);
+            container.innerHTML = `<p class="text-xs text-red-400 text-center py-3">ค้นหาบัญชีไม่สำเร็จ: ${escapeHtml(error.message || error)}</p>`;
+        }
+    };
+
+    window.addCoinsToCustomerCloud = async function(email, amount) {
+        try {
+            const usersRef = collection(window.db, "users");
+            const q = query(usersRef, where("email", "==", email));
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) {
+                alert("ไม่พบบัญชีลูกค้านี้ในระบบ");
+                return false;
+            }
+            const target = snapshot.docs[0];
+            const currentCoins = Number(target.data().coins || 0);
+            const newCoins = currentCoins + amount;
+            if (!Number.isSafeInteger(newCoins) || newCoins < 0) {
+                alert("จำนวนเหรียญเกินขอบเขตที่ระบบรองรับ");
+                return false;
+            }
+            await updateDoc(doc(window.db, "users", target.id), { coins: newCoins });
+            if (currentUserProfile && currentUserProfile.email === email) {
+                currentUserProfile.coins = newCoins;
+                localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+                updateUIByAuth();
+            }
+            return true;
+        } catch (error) {
+            console.error("Direct customer top-up failed:", error);
+            alert("เติมเหรียญไม่สำเร็จ: " + (error.message || error));
+            return false;
+        }
     };
 
     window.processAuthorWithdrawalCloud = async function(email, amountBaht) {
