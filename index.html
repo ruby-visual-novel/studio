@@ -1012,7 +1012,6 @@
         renderActiveAuthorList();
     }
 
-    // ฟังก์ชันสำหรับแอดมินสูงสุด ดึงเงิน/หักยอดรายได้นักเขียนเมื่อมีการเบิกเงิน
     function processAuthorWithdrawal() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser || currentUser.role !== 'super_admin') {
@@ -1032,8 +1031,6 @@
             return;
         }
 
-        // คำนวณเหรียญที่ต้องหักออก (เนื่องจากนักเขียนได้ส่วนแบ่ง 80% ดังนั้น เงิน 1 บาท = 1 / 0.80 เหรียญ หรือแปลงตามระบบของคุณ)
-        // หรือบันทึกประวัติการเบิกเงินลง LocalStorage / Cloud
         let withdrawals = JSON.parse(localStorage.getItem('mynovel_withdrawals')) || [];
         withdrawals.unshift({
             id: "wd_" + Date.now(),
@@ -1300,7 +1297,6 @@
     function sendUserMessage(e) {
         e.preventDefault();
         
-        // เช็ค Cooldown 60 วินาที สำหรับการส่งข้อความแชทซัพพอร์ต
         if (!checkCooldown('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง')) return;
 
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
@@ -1314,7 +1310,6 @@
         localStorage.setItem('mynovel_chats', JSON.stringify(chats));
         input.value = '';
         
-        // เริ่มจับเวลา Cooldown
         startCooldownTimer('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง');
 
         loadUserChat();
@@ -1571,7 +1566,6 @@
                 `).join('')}</div>
             </div>
         `;
-        // เรียกตรวจสอบคูลดาวน์ของปุ่มรีวิวเรื่องนี้ทันทีที่เรนเดอร์เสร็จ
         initButtonCooldown('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว');
     }
 
@@ -2045,14 +2039,13 @@
     function toggleSearch() { document.getElementById('searchBar').classList.toggle('hidden'); }
     function escapeHtml(str) { return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
-    // ตรวจสอบคูลดาวน์แชทค้างไว้ตอนเปิดหน้าเว็บ
     initButtonCooldown('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง');
 
     updateNotifBadge();
     renderHomeNovels();
 </script>
 
-<!-- โหลด Firebase SDK และตั้งค่าความปลอดภัยตามขั้นตอนที่ 1-3 -->
+<!-- โหลด Firebase SDK และตั้งค่าความปลอดภัย พร้อมฟังก์ชันบันทึกบัญชีอัตโนมัติ -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -2075,7 +2068,7 @@
     let currentUserProfile = null;
     let novelsCache = [];
 
-    // ติดตามสถานะ Auth และดึง role จาก Firestore
+    // ติดตามสถานะ Auth และบันทึกบัญชีอัตโนมัติเมื่อเข้าสู่ระบบ
     onAuthStateChanged(window.auth, async (firebaseUser) => {
         if (firebaseUser) {
             const userDocRef = doc(window.db, "users", firebaseUser.uid);
@@ -2086,6 +2079,9 @@
                 currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, name: firebaseUser.displayName || "ผู้ใช้", role: "customer", coins: 0 };
             }
             localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+            if (typeof rememberAccount === 'function') {
+                rememberAccount(currentUserProfile);
+            }
         } else {
             currentUserProfile = null;
             localStorage.removeItem('mynovel_currentUser');
@@ -2094,7 +2090,6 @@
         if (typeof renderHomeNovels === 'function') renderHomeNovels();
     });
 
-    // สมัครสมาชิก (สร้าง Document พร้อมกำหนดโครงสร้าง role: "customer" บน Firestore)
     window.handleRegister = async function(e) {
         e.preventDefault();
         const name = document.getElementById('regName').value;
@@ -2119,6 +2114,9 @@
             await setDoc(doc(window.db, "users", uid), userData);
             currentUserProfile = userData;
             localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+            if (typeof rememberAccount === 'function') {
+                rememberAccount(currentUserProfile);
+            }
             
             alert("สมัครสมาชิกและเชื่อมต่อคลาวด์ Firebase สำเร็จ!");
             closeModal('authModal');
@@ -2128,7 +2126,6 @@
         }
     };
 
-    // เข้าสู่ระบบ (ดึง role จาก Firestore โดยตรง ปลอดภัย ไม่ฝังอีเมลแอดมินในโค้ด)
     window.handleLogin = async function(e) {
         e.preventDefault();
         const email = document.getElementById('loginEmail').value.trim();
@@ -2148,6 +2145,10 @@
             }
 
             localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+            if (typeof rememberAccount === 'function') {
+                rememberAccount(currentUserProfile);
+            }
+
             alert(`ยินดีต้อนรับคุณ ${currentUserProfile.name} เข้าสู่ระบบคลาวด์`);
             closeModal('authModal');
             updateUIByAuth();
@@ -2170,7 +2171,6 @@
         }
     };
 
-    // ฟังก์ชันจัดการข้อมูลนิยายบน Firestore
     window.getNovels = function() {
         return novelsCache;
     };
@@ -2221,15 +2221,8 @@
         }
     };
 
-    // ฟังก์ชันอัปเดตสิทธิ์หรือเหรียญผ่าน Cloud
-    window.updateUserCoinsCloud = async function(email, amount) {
-        // ค้นหา UID จากอีเมลหรืออัปเดตผ่าน Firestore
-        // สามารถจัดการผ่านแผง Admin ควบคู่ได้ทันที
-    };
-
-    window.processAuthorWithdrawalCloud = async function(email, amountBaht) {
-        // สามารถเพิ่มโค้ดอัปเดตฐานข้อมูล Firestore สำหรับหักยอดเงิน/เหรียญนักเขียนได้ที่นี่
-    };
+    window.updateUserCoinsCloud = async function(email, amount) {};
+    window.processAuthorWithdrawalCloud = async function(email, amountBaht) {};
 
     fetchNovelsFromFirestore();
 </script>
