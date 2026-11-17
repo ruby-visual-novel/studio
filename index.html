@@ -3532,8 +3532,10 @@
     };
 
     let unsubscribeUserSnapshot = null;
+    let isRegisteringNewUser = false;
 
     onAuthStateChanged(window.auth, async (firebaseUser) => {
+        if (isRegisteringNewUser) return;
         if (unsubscribeUserSnapshot) {
             unsubscribeUserSnapshot();
             unsubscribeUserSnapshot = null;
@@ -3607,8 +3609,8 @@
         const submitBtn = e.target.querySelector('button[type="submit"]');
         if (submitBtn && submitBtn.disabled) return;
 
-        const name = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value.trim();
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim().toLowerCase();
         const phone = document.getElementById('regPhone').value.trim();
         const password = document.getElementById('regPassword').value;
 
@@ -3618,10 +3620,22 @@
             submitBtn.innerText = "กำลังสมัครสมาชิก...";
         }
 
+        isRegisteringNewUser = true;
         try {
             const userCredential = await createUserWithEmailAndPassword(window.auth, email, password);
             const uid = userCredential.user.uid;
-            const userData = { uid, name, email, phone, role: "customer", coins: 0, createdAt: new Date().toISOString() };
+            const userData = {
+                uid,
+                name,
+                email,
+                phone,
+                role: "customer",
+                coins: 0,
+                favorites: [],
+                readingHistory: [],
+                unlockedEpisodes: [],
+                createdAt: new Date().toISOString()
+            };
             await setDoc(doc(window.db, "users", uid), userData);
             currentUserProfile = userData;
             localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
@@ -3633,6 +3647,7 @@
         } catch (error) {
             alert("เกิดข้อผิดพลาดในการสมัครสมาชิก: " + error.message);
         } finally {
+            isRegisteringNewUser = false;
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
