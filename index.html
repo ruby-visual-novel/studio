@@ -3338,8 +3338,8 @@
     window.db = getFirestore(app);
 
     // ==================== 0. ระบบอัปโหลดรูปขึ้น Cloudinary (Cloud Name: pi7oqz3c) ====================
-    	const CLOUD_NAME = "pi7oqz3c";
-	const UPLOAD_PRESET = "ml_default"; // ตั้งค่า Unsigned Upload Preset ใน Cloudinary เป็นชื่อนี้ (หรือเปลี่ยนให้ตรงกับที่ตั้งไว้)
+    const CLOUDINARY_CLOUD_NAME = "pi7oqz3c";
+    const CLOUDINARY_UPLOAD_PRESET = "ml_default";
 
     window.uploadImageToFirebaseStorage = async function(dataUrl, folder = 'novel_images') {
         if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
@@ -3359,9 +3359,11 @@
             if (res.ok && data.secure_url) {
                 return data.secure_url;
             }
+            console.error("Cloudinary response error:", data);
             throw new Error(data.error?.message || "Cloudinary upload failed");
         } catch (error) {
             console.error("Cloudinary upload error:", error);
+            alert("รายละเอียด Error จาก Cloudinary: " + (error.message || error));
             return null;
         }
     };
