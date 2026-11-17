@@ -766,7 +766,7 @@
             const cloudUrl = await window.uploadImageToFirebaseStorage(base64OrUrl, folder);
             if (cloudUrl) return cloudUrl;
         }
-        return base64OrUrl;
+        throw new Error("อัปโหลดรูปภาพไปยัง Cloudinary ไม่สำเร็จ กรุณาตรวจสอบ Upload Preset (Unsigned)");
     }
 
     function openAssetLibraryModal() {
@@ -786,9 +786,9 @@
                 assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
                 saveAssetLibrary(assets);
                 renderAssetLibraryGrid();
-                alert("อัปโหลดรูปภาพเข้าคลังสำเร็จ! (เก็บเป็นลิงก์ Cloud Storage ไม่เปลืองพื้นที่ฐานข้อมูล)");
+                alert("อัปโหลดรูปภาพขึ้น Cloudinary และเก็บเข้าคลังสำเร็จ!");
             } catch (err) {
-                alert("⚠️ พื้นที่คลังรูปภาพเต็ม กรุณาลบรูปเก่าที่ไม่ใช้ในคลังออกบางส่วนก่อนครับ");
+                alert("⚠️ " + (err.message || "อัปโหลดรูปไม่สำเร็จ หรือพื้นที่คลังเต็ม"));
             }
             event.target.value = '';
         });
@@ -798,15 +798,19 @@
         const file = event.target.files[0];
         if (!file) return;
         compressImageFile(file, 960, 0.8, async function(base64) {
-            const finalUrl = await resolveImageToStorageUrl(base64, 'novel_scenes');
             try {
-                let assets = getAssetLibrary();
-                assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
-                saveAssetLibrary(assets);
+                const finalUrl = await resolveImageToStorageUrl(base64, 'novel_scenes');
+                try {
+                    let assets = getAssetLibrary();
+                    assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
+                    saveAssetLibrary(assets);
+                } catch (err) {
+                    console.warn("Asset library cache full, still applying scene image directly.");
+                }
+                applySelectedAssetImage(finalUrl);
             } catch (err) {
-                console.warn("Asset library cache full, still applying scene image directly.");
+                alert("⚠️ " + (err.message || "อัปโหลดรูปฉากไม่สำเร็จ"));
             }
-            applySelectedAssetImage(finalUrl);
             event.target.value = '';
         });
     }
@@ -815,16 +819,20 @@
         const file = event.target.files[0];
         if (!file) return;
         compressImageFile(file, 720, 0.8, async function(base64) {
-            const finalUrl = await resolveImageToStorageUrl(base64, 'novel_covers');
             try {
-                let assets = getAssetLibrary();
-                assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
-                saveAssetLibrary(assets);
+                const finalUrl = await resolveImageToStorageUrl(base64, 'novel_covers');
+                try {
+                    let assets = getAssetLibrary();
+                    assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
+                    saveAssetLibrary(assets);
+                } catch (err) {
+                    console.warn("Asset library cache full, still applying cover directly.");
+                }
+                document.getElementById('novelCoverInput').value = finalUrl;
+                previewCoverInput(finalUrl);
             } catch (err) {
-                console.warn("Asset library cache full, still applying cover directly.");
+                alert("⚠️ " + (err.message || "อัปโหลดรูปปกไม่สำเร็จ"));
             }
-            document.getElementById('novelCoverInput').value = finalUrl;
-            previewCoverInput(finalUrl);
             event.target.value = '';
         });
     }
@@ -3020,7 +3028,9 @@
                         
                         <div class="space-y-1">
                             <div class="flex gap-1 items-center">
-                                <input type="text" value="${escapeHtml(scene.bg || '')}" oninput="updateTempScene(${i}, 'bg', this.value); previewSceneBgInput(${i}, this.value)" id="sceneBgInput_${i}" placeholder="วางลิงก์รูป หรือเลือกจากคลัง..." class="flex-1 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
+                                <input type="text" value="${escapeHtml(scene.bg || '')}" oninput="updateTempScene(${i}, 'bg', this.value); previewSceneBgInput(${i}, this.value)" id="sceneBgInput_${i}" placeholder="วางลิงก์รูป หรืออัปโหลด..." class="flex-1 min-w-0 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded text-xs">
+                                <input type="file" id="directSceneUploadFile_${i}" accept="image/*" class="hidden" onchange="handleDirectSceneUpload(event, ${i})">
+                                <button type="button" id="directSceneUploadBtn_${i}" onclick="document.getElementById('directSceneUploadFile_${i}').click()" class="bg-red-800 hover:bg-red-900 text-white text-xs px-2 py-1.5 rounded font-medium whitespace-nowrap cursor-pointer" title="อัปโหลดรูปฉากจากเครื่อง">📤 อัปโหลด</button>
                                 <button type="button" onclick="openAssetPicker('scene', ${i})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 rounded font-medium whitespace-nowrap cursor-pointer">📂 คลังรูป</button>
                             </div>
                             <div id="sceneBgPreview_${i}" class="${scene.bg ? '' : 'hidden'} mt-1">
@@ -3073,6 +3083,37 @@
         remapChoiceIndicesAfterMove(index, targetIndex);
         renderSceneBlocks();
         triggerAutosave();
+    }
+
+    function handleDirectSceneUpload(event, index) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const btn = document.getElementById(`directSceneUploadBtn_${index}`);
+        if (btn) { btn.disabled = true; btn.innerText = "⏳..."; }
+        compressImageFile(file, 960, 0.8, async function(base64) {
+            try {
+                const finalUrl = await resolveImageToStorageUrl(base64, 'novel_scenes');
+                try {
+                    let assets = getAssetLibrary();
+                    assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
+                    saveAssetLibrary(assets);
+                } catch (err) {
+                    console.warn("Asset library cache full, still applying scene image directly.");
+                }
+                if (tempScenes[index]) {
+                    tempScenes[index].bg = finalUrl;
+                    const bgInput = document.getElementById(`sceneBgInput_${index}`);
+                    if (bgInput) bgInput.value = finalUrl;
+                    previewSceneBgInput(index, finalUrl);
+                    triggerAutosave();
+                }
+            } catch (err) {
+                alert("⚠️ " + (err.message || "อัปโหลดรูปฉากไม่สำเร็จ"));
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerText = "📤 อัปโหลด"; }
+                event.target.value = '';
+            }
+        });
     }
 
     function previewSceneBgInput(index, url) {
@@ -3254,8 +3295,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs, query, where, updateDoc, runTransaction, onSnapshot, writeBatch, arrayContains } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-
     const firebaseConfig = {
         apiKey: "AIzaSyCdCcrt5dbB9CyPl3jHrbAPExnBez0qYJ0",
         authDomain: "ruby-visual-novel.firebaseapp.com",
@@ -3269,21 +3308,32 @@
     const app = initializeApp(firebaseConfig);
     window.auth = getAuth(app);
     window.db = getFirestore(app);
-    window.storage = getStorage(app);
 
-    // ==================== 0. ระบบอัปโหลดรูปขึ้น Firebase Storage (แก้ปัญหาไฟล์เกิน 1 MB) ====================
+    // ==================== 0. ระบบอัปโหลดรูปขึ้น Cloudinary (Cloud Name: pi7oqz3c) ====================
+    const CLOUDINARY_CLOUD_NAME = "pi7oqz3c";
+    const CLOUDINARY_UPLOAD_PRESET = "ruby_unsigned"; // ตั้งค่า Unsigned Upload Preset ใน Cloudinary เป็นชื่อนี้ (หรือเปลี่ยนให้ตรงกับที่ตั้งไว้)
+
     window.uploadImageToFirebaseStorage = async function(dataUrl, folder = 'novel_images') {
         if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
         try {
             const user = window.auth.currentUser;
             const ownerFolder = user ? user.uid : 'public';
-            const fileName = `${folder}/${ownerFolder}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
-            const fileRef = storageRef(window.storage, fileName);
-            await uploadString(fileRef, dataUrl, 'data_url');
-            const downloadUrl = await getDownloadURL(fileRef);
-            return downloadUrl;
+            const formData = new FormData();
+            formData.append("file", dataUrl);
+            formData.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+            formData.append("folder", `ruby_visual_novel/${folder}/${ownerFolder}`);
+
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: "POST",
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok && data.secure_url) {
+                return data.secure_url;
+            }
+            throw new Error(data.error?.message || "Cloudinary upload failed");
         } catch (error) {
-            console.warn("Firebase Storage upload fallback:", error);
+            console.error("Cloudinary upload error:", error);
             return null;
         }
     };
