@@ -703,9 +703,20 @@
     }
     checkAndResetMonthlyAndExpireData();
 
-    function getNovels() { 
-        try { return JSON.parse(localStorage.getItem('mynovel_data')) || []; } 
-        catch (e) { return []; } 
+    function getNovels() {
+        // ป้องกันข้อมูลเก่าหรือข้อมูลที่ถูกเก็บเป็น object ทำให้ .filter() ล้มเหลว
+        try {
+            const stored = JSON.parse(localStorage.getItem('mynovel_data'));
+            if (Array.isArray(stored)) return stored;
+            if (stored && Array.isArray(stored.novels)) return stored.novels;
+            if (stored && typeof stored === 'object') {
+                return Object.values(stored).filter(item => item && typeof item === 'object' && !Array.isArray(item));
+            }
+            return [];
+        } catch (e) {
+            console.warn('ข้อมูลนิยายใน Local Storage อ่านไม่ได้:', e);
+            return [];
+        }
     }
 
     function saveNovelsData(data) {
@@ -2417,7 +2428,14 @@
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         const isAdmin = currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'admin');
 
-        let filtered = novels.filter(n => (currentCategory === 'ทั้งหมด' || n.category === currentCategory) && (n.title.toLowerCase().includes(query) || n.author.toLowerCase().includes(query)) && n.published !== false);
+        let filtered = (Array.isArray(novels) ? novels : []).filter(n => {
+            if (!n || typeof n !== 'object') return false;
+            const title = String(n.title || '').toLowerCase();
+            const author = String(n.author || '').toLowerCase();
+            return (currentCategory === 'ทั้งหมด' || n.category === currentCategory)
+                && (title.includes(query) || author.includes(query))
+                && n.published !== false;
+        });
         
         grid.innerHTML = filtered.length === 0 ? `<p class="col-span-full text-center text-zinc-500 py-10">ไม่พบนิยาย</p>` : filtered.map(novel => `
             <div class="theme-card bg-zinc-900 rounded-xl shadow-sm overflow-hidden border border-zinc-800 flex flex-col relative group">
@@ -3294,7 +3312,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs, query, where, updateDoc, runTransaction, onSnapshot, writeBatch, arrayContains } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs, query, where, updateDoc, runTransaction, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     const firebaseConfig = {
         apiKey: "AIzaSyCdCcrt5dbB9CyPl3jHrbAPExnBez0qYJ0",
         authDomain: "ruby-visual-novel.firebaseapp.com",
