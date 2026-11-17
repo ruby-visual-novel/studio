@@ -1156,7 +1156,7 @@
         window.open("https://line.me/ti/p/dDDrmvZs6J", "_blank");
     }
 
-    function openWriterDashboard() {
+    async function openWriterDashboard() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser || (currentUser.role !== 'author' && currentUser.role !== 'super_admin' && currentUser.role !== 'admin')) {
             alert("สำหรับนักเขียนเท่านั้น");
@@ -1164,6 +1164,12 @@
         }
         hideAllViews();
         document.getElementById('writerDashboardView').classList.remove('hidden');
+        const listContainer = document.getElementById('writerUnlockHistoryList');
+        if (listContainer) {
+            listContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">⏳ กำลังโหลดข้อมูลรายได้ล่าสุดจากคลาวด์...</p>`;
+        }
+        if (window.fetchNovelsFromFirestore) await window.fetchNovelsFromFirestore();
+        if (window.fetchUnlocksFromFirestore) await window.fetchUnlocksFromFirestore();
         renderWriterDashboardData();
     }
 
@@ -1377,7 +1383,7 @@
         }
     }
 
-    function approveTopupWithCustomCoins(topupId, isApproved) {
+    async function approveTopupWithCustomCoins(topupId, isApproved) {
         let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
         let t = topups.find(item => item.id === topupId);
         if (!t) return;
@@ -1395,17 +1401,21 @@
         let coinsToAdd = parseInt(inputVal);
         if (isNaN(coinsToAdd) || coinsToAdd <= 0) { alert("กรุณากรอกจำนวนเหรียญให้ถูกต้อง มากกว่า 0"); return; }
 
+        if (window.updateUserCoinsCloud) {
+            const success = await window.updateUserCoinsCloud(t.email, coinsToAdd);
+            if (!success) return;
+        }
+
         t.coins = coinsToAdd;
         t.status = 'approved';
         localStorage.setItem('mynovel_topups', JSON.stringify(topups));
 
-        if (window.updateUserCoinsCloud) { window.updateUserCoinsCloud(t.email, coinsToAdd); }
         renderPendingTopups();
         renderSuperAdminTopupHistory();
-        alert(`เติม ${coinsToAdd} เหรียญ สำเร็จ!`);
+        alert(`เติม ${coinsToAdd} เหรียญ ให้ ${t.email} สำเร็จ!`);
     }
 
-    function revertTopup(topupId) {
+    async function revertTopup(topupId) {
         let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
         let t = topups.find(item => item.id === topupId);
         if (!t || t.status !== 'approved') return;
@@ -1413,7 +1423,10 @@
         let coinsToDeduct = t.coins || 0;
         if (!confirm(`คุณต้องการดึงเงิน/เหรียญกลับจำนวน ${coinsToDeduct} เหรียญ จากบัญชี (${t.email}) ใช่หรือไม่?`)) return;
 
-        if (window.updateUserCoinsCloud) { window.updateUserCoinsCloud(t.email, -coinsToDeduct); }
+        if (window.updateUserCoinsCloud) {
+            const success = await window.updateUserCoinsCloud(t.email, -coinsToDeduct);
+            if (!success) return;
+        }
         t.status = 'pending';
         t.coins = 0;
         localStorage.setItem('mynovel_topups', JSON.stringify(topups));
@@ -2645,25 +2658,63 @@
         } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
     };
 
+    window.fetchUnlocksFromFirestore = async function() {
+        try {
+            const querySnapshot = await getDocs(collection(window.db, "unlocks"));
+            const cloudUnlocks = [];
+            const sixMonthsAgo = Date.now() - (6 * 30 * 24 * 60 * 60 * 1000);
+            querySnapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                if (!data.timestamp || data.timestamp >= sixMonthsAgo) {
+                    cloudUnlocks.push({ id: docSnap.id, ...data });
+                }
+            });
+            cloudUnlocks.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            localStorage.setItem('mynovel_unlocks', JSON.stringify(cloudUnlocks));
+            return cloudUnlocks;
+        } catch (error) {
+            console.error("Error fetching unlocks:", error);
+            return [];
+        }
+    };
+
     window.updateUserCoinsCloud = async function(email, amount) {
         try {
-            const usersRef = collection(window.db, "users");
-            const q = query(usersRef, where("email", "==", email));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) return;
+            const targetEmail = String(email || '').trim().toLowerCase();
+            const usersSnapshot = await getDocs(collection(window.db, "users"));
+            let targetDocSnap = null;
+            usersSnapshot.forEach((docSnap) => {
+                if (String(docSnap.data().email || '').trim().toLowerCase() === targetEmail) {
+                    targetDocSnap = docSnap;
+                }
+            });
 
-            const targetDocSnap = querySnapshot.docs[0];
+            if (!targetDocSnap) {
+                alert(`⚠️ ไม่พบบัญชีผู้ใช้ที่ใช้อีเมล "${email}" ในฐานข้อมูลคลาวด์ (เหรียญจึงยังไม่ถูกเติม)`);
+                return false;
+            }
+
             const targetRef = doc(window.db, "users", targetDocSnap.id);
-            const currentCoins = targetDocSnap.data().coins || 0;
-            const newCoins = Math.max(0, currentCoins + amount);
+            const currentCoins = Number(targetDocSnap.data().coins || 0);
+            const newCoins = Math.max(0, currentCoins + Number(amount));
+
+            if (!Number.isSafeInteger(newCoins)) {
+                alert("จำนวนเหรียญเกินขอบเขตที่ระบบรองรับ");
+                return false;
+            }
 
             await updateDoc(targetRef, { coins: newCoins });
-            if (currentUserProfile && currentUserProfile.email === email) {
+            if (currentUserProfile && String(currentUserProfile.email || '').trim().toLowerCase() === targetEmail) {
                 currentUserProfile.coins = newCoins;
                 localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
                 updateUIByAuth();
             }
-        } catch (error) { console.error("Error updating user coins:", error); }
+            return true;
+        } catch (error) {
+            console.error("Error updating user coins:", error);
+            alert("❌ เติมเหรียญลงฐานข้อมูลไม่สำเร็จ: " + (error.message || error));
+            return false;
+        }
     };
 
     // ค้นหาบัญชีผู้ใช้จริงจาก Firestore สำหรับการเติมเหรียญโดยแอดมินสูงสุด
@@ -2709,33 +2760,7 @@
     };
 
     window.addCoinsToCustomerCloud = async function(email, amount) {
-        try {
-            const usersRef = collection(window.db, "users");
-            const q = query(usersRef, where("email", "==", email));
-            const snapshot = await getDocs(q);
-            if (snapshot.empty) {
-                alert("ไม่พบบัญชีลูกค้านี้ในระบบ");
-                return false;
-            }
-            const target = snapshot.docs[0];
-            const currentCoins = Number(target.data().coins || 0);
-            const newCoins = currentCoins + amount;
-            if (!Number.isSafeInteger(newCoins) || newCoins < 0) {
-                alert("จำนวนเหรียญเกินขอบเขตที่ระบบรองรับ");
-                return false;
-            }
-            await updateDoc(doc(window.db, "users", target.id), { coins: newCoins });
-            if (currentUserProfile && currentUserProfile.email === email) {
-                currentUserProfile.coins = newCoins;
-                localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
-                updateUIByAuth();
-            }
-            return true;
-        } catch (error) {
-            console.error("Direct customer top-up failed:", error);
-            alert("เติมเหรียญไม่สำเร็จ: " + (error.message || error));
-            return false;
-        }
+        return await window.updateUserCoinsCloud(email, amount);
     };
 
     window.processAuthorWithdrawalCloud = async function(email, amountBaht) {
