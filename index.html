@@ -3844,10 +3844,12 @@
     };
 
     window.subscribeNotificationsCloud = function(email) {
+        const authUser = window.auth && window.auth.currentUser;
+        const recipientUid = authUser ? authUser.uid : '';
         const cleanEmail = String(email || getCurrentEmail() || '').toLowerCase().trim();
-        if (!cleanEmail) return;
+        if (!recipientUid || !cleanEmail) return;
         window.unsubscribeNotificationsCloud();
-        const q = query(collection(window.db, "notifications"), where("recipientEmail", "==", cleanEmail));
+        const q = query(collection(window.db, "notifications"), where("recipientUid", "==", recipientUid));
         unsubscribeNotificationsListener = onSnapshot(q, (snapshot) => {
             const list = [];
             snapshot.forEach((docSnap) => {
@@ -3864,10 +3866,12 @@
     };
 
     window.fetchNotificationsFromCloud = async function() {
+        const authUser = window.auth && window.auth.currentUser;
+        const recipientUid = authUser ? authUser.uid : '';
         const cleanEmail = String(getCurrentEmail() || '').toLowerCase().trim();
-        if (!cleanEmail) return [];
+        if (!recipientUid || !cleanEmail) return [];
         try {
-            const q = query(collection(window.db, "notifications"), where("recipientEmail", "==", cleanEmail));
+            const q = query(collection(window.db, "notifications"), where("recipientUid", "==", recipientUid));
             const snapshot = await getDocs(q);
             const list = [];
             snapshot.forEach((docSnap) => {
@@ -3891,10 +3895,12 @@
     };
 
     window.markAllNotificationsReadCloud = async function() {
+        const authUser = window.auth && window.auth.currentUser;
+        const recipientUid = authUser ? authUser.uid : '';
         const cleanEmail = String(getCurrentEmail() || '').toLowerCase().trim();
-        if (!cleanEmail) return;
+        if (!recipientUid || !cleanEmail) return;
         try {
-            const q = query(collection(window.db, "notifications"), where("recipientEmail", "==", cleanEmail), where("isRead", "==", false));
+            const q = query(collection(window.db, "notifications"), where("recipientUid", "==", recipientUid), where("isRead", "==", false));
             const snapshot = await getDocs(q);
             if (snapshot.empty) return;
             const batch = writeBatch(window.db);
