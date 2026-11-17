@@ -860,7 +860,7 @@
     function getReviews() { try { return JSON.parse(localStorage.getItem('mynovel_reviews')) || []; } catch (e) { return []; } }
     function saveReviews(reviews) { localStorage.setItem('mynovel_reviews', JSON.stringify(reviews)); }
 
-    function submitReview(e, novelId) {
+    async function submitReview(e, novelId) {
         e.preventDefault();
         if (!checkCooldown('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว')) return;
 
@@ -869,28 +869,65 @@
         const rating = parseInt(document.getElementById(`reviewRating_${novelId}`).value);
         const comment = document.getElementById(`reviewComment_${novelId}`).value.trim();
         if (!comment) { alert("กรุณากรอกข้อความรีวิว"); return; }
-        let reviews = getReviews();
-        reviews.unshift({ id: "rev_" + Date.now(), novelId, userEmail: currentUser.email, userName: currentUser.name, rating, comment, time: new Date().toLocaleString('th-TH') });
-        saveReviews(reviews);
+
+        const reviewObj = {
+            id: "rev_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6),
+            novelId,
+            userUid: currentUser.uid || '',
+            userEmail: currentUser.email,
+            userName: currentUser.name,
+            rating,
+            comment,
+            timestamp: Date.now(),
+            time: new Date().toLocaleString('th-TH')
+        };
+
+        if (window.saveReviewToCloud) {
+            const ok = await window.saveReviewToCloud(reviewObj);
+            if (!ok) return;
+        } else {
+            let reviews = getReviews();
+            reviews.unshift(reviewObj);
+            saveReviews(reviews);
+        }
+
         startCooldownTimer('cooldown_review', 'submitReviewBtn_' + novelId, 'ส่งรีวิว');
         alert("ส่งรีวิวสำเร็จ! ⭐");
         openNovelDetail(novelId);
     }
 
-    function deleteReview(reviewId, novelId) {
+    async function deleteReview(reviewId, novelId) {
         if (!confirm("ต้องการลบรีวิวนี้ใช่หรือไม่?")) return;
-        saveReviews(getReviews().filter(r => r.id !== reviewId));
+        if (window.deleteReviewFromCloud) {
+            await window.deleteReviewFromCloud(reviewId, novelId);
+        } else {
+            saveReviews(getReviews().filter(r => r.id !== reviewId));
+        }
         openNovelDetail(novelId);
     }
 
-    function reportReview(reviewId) {
+    async function reportReview(reviewId) {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบ"); openAuthModal('login'); return; }
         let reason = prompt("ระบุเหตุผลที่ไม่เหมาะสม:");
         if (!reason) return;
-        let reports = JSON.parse(localStorage.getItem('mynovel_reports')) || [];
-        reports.unshift({ id: "rep_" + Date.now(), reviewId, reporterEmail: currentUser.email, reporterName: currentUser.name, reason, time: new Date().toLocaleString('th-TH') });
-        localStorage.setItem('mynovel_reports', JSON.stringify(reports));
+        const reportObj = {
+            id: "rep_" + Date.now(),
+            reviewId,
+            reporterUid: currentUser.uid || '',
+            reporterEmail: currentUser.email,
+            reporterName: currentUser.name,
+            reason,
+            timestamp: Date.now(),
+            time: new Date().toLocaleString('th-TH')
+        };
+        if (window.saveReportToCloud) {
+            await window.saveReportToCloud(reportObj);
+        } else {
+            let reports = JSON.parse(localStorage.getItem('mynovel_reports')) || [];
+            reports.unshift(reportObj);
+            localStorage.setItem('mynovel_reports', JSON.stringify(reports));
+        }
         alert("ส่งรายงานเรียบร้อยแล้ว 🛡️");
     }
 
@@ -1167,13 +1204,27 @@
         document.getElementById('topupModal').classList.remove('hidden');
     }
 
-    function contactAdminForTopup() {
+    async function contactAdminForTopup() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อน"); openAuthModal('login'); return; }
         const requestId = "MN" + Date.now();
-        let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
-        topups.unshift({ id: requestId, name: currentUser.name, email: currentUser.email, coins: 0, time: new Date().toLocaleString('th-TH'), status: 'pending' });
-        localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+        const record = {
+            id: requestId,
+            uid: currentUser.uid || '',
+            name: currentUser.name,
+            email: currentUser.email,
+            coins: 0,
+            timestamp: Date.now(),
+            time: new Date().toLocaleString('th-TH'),
+            status: 'pending'
+        };
+        if (window.saveTopupRecordCloud) {
+            await window.saveTopupRecordCloud(record, false);
+        } else {
+            let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+            topups.unshift(record);
+            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+        }
         window.open("https://line.me/ti/p/dDDrmvZs6J", "_blank");
     }
 
@@ -1308,7 +1359,16 @@
         renderAdminManagementList();
         renderActiveAuthorList();
 
-        // โหลดข้อมูลล่าสุดจากคลาวด์เพื่อให้ระบบเบิกเงินคำนวณยอด 80/20 ได้แม่นยำ 100%
+        // โหลดข้อมูลล่าสุดจากคลาวด์ทั้งหมด (ตั้งค่า, ประวัติเติมเหรียญ, นิยาย, ยอดขาย, เบิกเงิน)
+        if (window.fetchSiteConfigFromCloud) {
+            await window.fetchSiteConfigFromCloud();
+            renderAuthorRecruitmentSettingBtn();
+        }
+        if (window.fetchTopupsFromFirestore) {
+            await window.fetchTopupsFromFirestore();
+            renderPendingTopups();
+            renderSuperAdminTopupHistory();
+        }
         if (window.fetchNovelsFromFirestore) await window.fetchNovelsFromFirestore();
         if (window.fetchUnlocksFromFirestore) await window.fetchUnlocksFromFirestore();
         if (window.fetchWithdrawalsFromFirestore) await window.fetchWithdrawalsFromFirestore();
@@ -1571,12 +1631,17 @@
         }
     }
 
-    function toggleAuthorRecruitmentSetting() {
+    async function toggleAuthorRecruitmentSetting() {
         const isOpen = localStorage.getItem('mynovel_authorRecruitmentOpen') === 'true';
-        localStorage.setItem('mynovel_authorRecruitmentOpen', (!isOpen).toString());
+        const nextState = !isOpen;
+        if (window.saveAuthorRecruitmentSettingCloud) {
+            const ok = await window.saveAuthorRecruitmentSettingCloud(nextState);
+            if (!ok) return;
+        }
+        localStorage.setItem('mynovel_authorRecruitmentOpen', nextState.toString());
         renderAuthorRecruitmentSettingBtn();
         updateUIByAuth();
-        alert(!isOpen ? "เปิดระบบรับสมัครนักเขียนแล้ว!" : "ปิดระบบรับสมัครนักเขียนแล้ว!");
+        alert(nextState ? "เปิดระบบรับสมัครนักเขียนแล้ว! (ซิงค์ทุกคนบนคลาวด์)" : "ปิดระบบรับสมัครนักเขียนแล้ว! (ซิงค์ทุกคนบนคลาวด์)");
     }
 
     /* 🛡️ แสดงคำขอเติมเงินเดิม และค้นหาบัญชีลูกค้าจาก Firebase เพื่อเติมเหรียญโดยตรง */
@@ -1645,16 +1710,22 @@
         }
         const res = await window.addCoinsToCustomerCloud(email, delta);
         if (res && res.success) {
-            let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
-            topups.unshift({
+            const record = {
                 id: "MN" + Date.now(),
                 name: email,
                 email: email,
                 coins: delta,
+                timestamp: Date.now(),
                 time: new Date().toLocaleString('th-TH'),
                 status: isDeduct ? 'reverted' : 'approved'
-            });
-            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            };
+            if (window.saveTopupRecordCloud) {
+                await window.saveTopupRecordCloud(record, true);
+            } else {
+                let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+                topups.unshift(record);
+                localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            }
 
             alert(`${isDeduct ? 'ดึงเหรียญกลับ' : 'เติมเหรียญ'}สำเร็จ! ยอดคงเหลือปัจจุบันของ ${email} คือ ${res.newCoins} เหรียญ`);
             renderPendingTopups();
@@ -1698,7 +1769,11 @@
 
         if (!isApproved) {
             t.status = 'rejected';
-            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            if (window.saveTopupRecordCloud) {
+                await window.saveTopupRecordCloud(t, true);
+            } else {
+                localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            }
             renderPendingTopups();
             renderSuperAdminTopupHistory();
             alert("ปฏิเสธรายการเรียบร้อยแล้ว");
@@ -1717,7 +1792,11 @@
 
         t.coins = coinsToAdd;
         t.status = 'approved';
-        localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+        if (window.saveTopupRecordCloud) {
+            await window.saveTopupRecordCloud(t, true);
+        } else {
+            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+        }
 
         renderPendingTopups();
         renderSuperAdminTopupHistory();
@@ -1739,7 +1818,11 @@
         }
         t.status = 'reverted';
         t.coins = -coinsToDeduct;
-        localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+        if (window.saveTopupRecordCloud) {
+            await window.saveTopupRecordCloud(t, true);
+        } else {
+            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+        }
         renderPendingTopups();
         renderSuperAdminTopupHistory();
         alert(`ดึงเหรียญกลับ ${coinsToDeduct} เหรียญ เรียบร้อยแล้ว! (ยอดคงเหลือปัจจุบันของลูกค้า: ${res ? res.newCoins : 0} เหรียญ)`);
@@ -1837,12 +1920,15 @@
         renderEpisodeLikesAndComments(novelId, epId);
     }
 
-    /* ❤️ ระบบกดไลก์และคอมเมนต์รายตอน */
+    /* ❤️ ระบบกดไลก์และคอมเมนต์รายตอน (เชื่อมต่อ Firebase Firestore) */
     function getEpisodeInteractionKey(novelId, epId, type) {
         return `mynovel_${type}_${novelId}_${epId}`;
     }
 
-    function renderEpisodeLikesAndComments(novelId, epId) {
+    async function renderEpisodeLikesAndComments(novelId, epId) {
+        if (window.fetchEpisodeInteractionCloud) {
+            await window.fetchEpisodeInteractionCloud(novelId, epId);
+        }
         let likesKey = getEpisodeInteractionKey(novelId, epId, 'likes');
         let likes = JSON.parse(localStorage.getItem(likesKey)) || [];
         document.getElementById('readerLikeCount').innerText = likes.length;
@@ -1862,7 +1948,7 @@
         renderEpisodeCommentsList(novelId, epId);
     }
 
-    function toggleEpisodeLike() {
+    async function toggleEpisodeLike() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อนกดถูกใจ"); openAuthModal('login'); return; }
         if (!activeNovelId || !activeEpisodeId) return;
@@ -1876,7 +1962,10 @@
             likes.push(currentUser.email);
         }
         localStorage.setItem(likesKey, JSON.stringify(likes));
-        renderEpisodeLikesAndComments(activeNovelId, activeEpisodeId);
+        if (window.saveEpisodeInteractionCloud) {
+            await window.saveEpisodeInteractionCloud(activeNovelId, activeEpisodeId, likes, getEpisodeComments(activeNovelId, activeEpisodeId));
+        }
+        await renderEpisodeLikesAndComments(activeNovelId, activeEpisodeId);
     }
 
     function getEpisodeComments(novelId, epId) {
@@ -1889,7 +1978,7 @@
         localStorage.setItem(key, JSON.stringify(comments));
     }
 
-    function submitEpisodeComment(e) {
+    async function submitEpisodeComment(e) {
         e.preventDefault();
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น"); openAuthModal('login'); return; }
@@ -1897,15 +1986,22 @@
         const text = input.value.trim();
         if (!text) return;
 
+        if (window.fetchEpisodeInteractionCloud) {
+            await window.fetchEpisodeInteractionCloud(activeNovelId, activeEpisodeId);
+        }
         let comments = getEpisodeComments(activeNovelId, activeEpisodeId);
         comments.unshift({
-            id: 'cmt_' + Date.now(),
+            id: 'cmt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
             userEmail: currentUser.email,
             userName: currentUser.name,
             text: text,
             time: new Date().toLocaleString('th-TH')
         });
         saveEpisodeComments(activeNovelId, activeEpisodeId, comments);
+        if (window.saveEpisodeInteractionCloud) {
+            let likes = JSON.parse(localStorage.getItem(getEpisodeInteractionKey(activeNovelId, activeEpisodeId, 'likes'))) || [];
+            await window.saveEpisodeInteractionCloud(activeNovelId, activeEpisodeId, likes, comments);
+        }
         input.value = '';
         renderEpisodeCommentsList(activeNovelId, activeEpisodeId);
     }
@@ -1931,17 +2027,26 @@
         `).join('');
     }
 
-    function deleteEpisodeComment(cmtId) {
+    async function deleteEpisodeComment(cmtId) {
         if (!confirm("ลบคอมเมนต์นี้ใช่หรือไม่?")) return;
         let comments = getEpisodeComments(activeNovelId, activeEpisodeId).filter(c => c.id !== cmtId);
         saveEpisodeComments(activeNovelId, activeEpisodeId, comments);
+        if (window.saveEpisodeInteractionCloud) {
+            let likes = JSON.parse(localStorage.getItem(getEpisodeInteractionKey(activeNovelId, activeEpisodeId, 'likes'))) || [];
+            await window.saveEpisodeInteractionCloud(activeNovelId, activeEpisodeId, likes, comments);
+        }
         renderEpisodeCommentsList(activeNovelId, activeEpisodeId);
     }
 
     function toggleChatWidget() {
         const modal = document.getElementById('chatPopupModal');
         modal.classList.toggle('hidden');
-        if (!modal.classList.contains('hidden')) loadUserChat();
+        if (!modal.classList.contains('hidden')) {
+            loadUserChat();
+            if (window.subscribeUserChatCloud) window.subscribeUserChatCloud();
+        } else {
+            if (window.unsubscribeUserChatCloud) window.unsubscribeUserChatCloud();
+        }
     }
 
     function loadUserChat() {
@@ -1950,7 +2055,7 @@
         if (!currentUser) { chatContainer.innerHTML = `<p class="text-xs text-center text-zinc-500 mt-10">กรุณาเข้าสู่ระบบก่อน</p>`; return; }
         let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
         let myChat = chats[currentUser.email] || [];
-        if (myChat.length === 0) { chatContainer.innerHTML = `<div class="text-center text-xs text-zinc-500 my-auto"><p class="font-semibold">สวัสดีค่ะคุณ ${currentUser.name}</p><p class="mt-1">มีข้อสงสัยสอบถามแอดมินได้เลยค่ะ</p></div>`; return; }
+        if (myChat.length === 0) { chatContainer.innerHTML = `<div class="text-center text-xs text-zinc-500 my-auto"><p class="font-semibold">สวัสดีค่ะคุณ ${escapeHtml(currentUser.name)}</p><p class="mt-1">มีข้อสงสัยสอบถามแอดมินได้เลยค่ะ</p></div>`; return; }
         chatContainer.innerHTML = myChat.map(msg => `
             <div class="flex flex-col ${msg.sender === 'admin' ? 'items-start' : 'items-end'}">
                 <span class="text-[10px] text-zinc-500 mb-0.5">${msg.sender === 'admin' ? '🛡️ แอดมิน' : 'คุณ'}</span>
@@ -1960,7 +2065,7 @@
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    function sendUserMessage(e) {
+    async function sendUserMessage(e) {
         e.preventDefault();
         if (!checkCooldown('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง')) return;
 
@@ -1969,31 +2074,51 @@
         const input = document.getElementById('userMsgInput');
         const text = input.value.trim();
         if (!text) return;
-        let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
-        if (!chats[currentUser.email]) chats[currentUser.email] = [];
-        chats[currentUser.email].push({ sender: 'user', userName: currentUser.name, text, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-        localStorage.setItem('mynovel_chats', JSON.stringify(chats));
+
+        const msgObj = {
+            sender: 'user',
+            userName: currentUser.name,
+            text,
+            timestamp: Date.now(),
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+
+        if (window.sendChatMessageCloud) {
+            const ok = await window.sendChatMessageCloud(currentUser.email, currentUser.name, msgObj);
+            if (!ok) return;
+        } else {
+            let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
+            if (!chats[currentUser.email]) chats[currentUser.email] = [];
+            chats[currentUser.email].push(msgObj);
+            localStorage.setItem('mynovel_chats', JSON.stringify(chats));
+        }
+
         input.value = '';
         startCooldownTimer('cooldown_chat', 'userMsgSubmitBtn', 'ส่ง');
         loadUserChat();
     }
 
-    function openSupportInbox() {
+    async function openSupportInbox() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'admin')) return;
         hideAllViews();
         document.getElementById('supportInboxView').classList.remove('hidden');
+        if (window.subscribeAllChatsCloud) {
+            window.subscribeAllChatsCloud();
+        }
         renderAdminChatUserList();
     }
 
     function renderAdminChatUserList() {
         let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
         let listContainer = document.getElementById('adminChatUserList');
-        let emails = Object.keys(chats);
+        if (!listContainer) return;
+        let emails = Object.keys(chats).filter(em => Array.isArray(chats[em]) && chats[em].length > 0);
         if (emails.length === 0) { listContainer.innerHTML = `<p class="text-xs text-zinc-500 text-center py-4">ยังไม่มีข้อความ</p>`; return; }
         listContainer.innerHTML = emails.map(email => {
             let lastMsg = chats[email][chats[email].length - 1];
-            return `<div onclick="selectChatUser('${email}')" class="p-3 rounded-xl border border-zinc-800 hover:bg-zinc-800 cursor-pointer transition"><p class="font-bold text-xs truncate">${lastMsg.userName || email}</p><p class="text-[11px] text-zinc-400 truncate mt-0.5">${lastMsg.text}</p></div>`;
+            const safeEmailAttr = String(email).replace(/\/g, '\\').replace(/'/g, "\'");
+            return `<div onclick="selectChatUser('${safeEmailAttr}')" class="p-3 rounded-xl border ${selectedChatEmail === email ? 'border-red-600 bg-zinc-800/80' : 'border-zinc-800'} hover:bg-zinc-800 cursor-pointer transition"><p class="font-bold text-xs truncate">${escapeHtml(lastMsg.userName || email)}</p><p class="text-[10px] text-zinc-500 truncate">${escapeHtml(email)}</p><p class="text-[11px] text-zinc-400 truncate mt-0.5">${escapeHtml(lastMsg.text)}</p></div>`;
         }).join('');
     }
 
@@ -2004,24 +2129,42 @@
         let userMsgs = chats[email] || [];
         document.getElementById('adminChatHeader').innerText = `กำลังสนทนากับ: ${email}`;
         document.getElementById('adminChatReplyForm').classList.remove('hidden');
-        document.getElementById('adminChatMessages').innerHTML = userMsgs.map(msg => `
+        const msgBox = document.getElementById('adminChatMessages');
+        msgBox.innerHTML = userMsgs.map(msg => `
             <div class="flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}">
-                <span class="text-[10px] text-zinc-500 mb-0.5">${msg.sender === 'admin' ? 'แอดมิน (คุณ)' : msg.userName}</span>
+                <span class="text-[10px] text-zinc-500 mb-0.5">${msg.sender === 'admin' ? 'แอดมิน (คุณ)' : escapeHtml(msg.userName || email)}</span>
                 <div class="max-w-[80%] px-3 py-2 rounded-xl text-xs ${msg.sender === 'admin' ? 'bg-red-800 text-white' : 'bg-zinc-900 border border-zinc-800'} shadow-sm">${escapeHtml(msg.text)}</div>
             </div>
         `).join('');
+        msgBox.scrollTop = msgBox.scrollHeight;
+        renderAdminChatUserList();
     }
 
-    function sendAdminReply(e) {
+    async function sendAdminReply(e) {
         e.preventDefault();
         if (!selectedChatEmail) return;
         let input = document.getElementById('adminReplyInput');
         let text = input.value.trim();
         if (!text) return;
-        let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
-        if (!chats[selectedChatEmail]) chats[selectedChatEmail] = [];
-        chats[selectedChatEmail].push({ sender: 'admin', userName: 'แอดมิน', text, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-        localStorage.setItem('mynovel_chats', JSON.stringify(chats));
+
+        const msgObj = {
+            sender: 'admin',
+            userName: 'แอดมิน',
+            text,
+            timestamp: Date.now(),
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        };
+
+        if (window.sendChatMessageCloud) {
+            const ok = await window.sendChatMessageCloud(selectedChatEmail, '', msgObj);
+            if (!ok) return;
+        } else {
+            let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
+            if (!chats[selectedChatEmail]) chats[selectedChatEmail] = [];
+            chats[selectedChatEmail].push(msgObj);
+            localStorage.setItem('mynovel_chats', JSON.stringify(chats));
+        }
+
         input.value = '';
         selectChatUser(selectedChatEmail);
     }
@@ -2167,12 +2310,16 @@
         `).join('');
     }
 
-    function openNovelDetail(novelId) {
+    async function openNovelDetail(novelId) {
         activeNovelId = novelId;
         const novel = getNovels().find(n => n.id === novelId);
         if (!novel) return;
         hideAllViews();
         document.getElementById('novelDetailView').classList.remove('hidden');
+
+        if (window.fetchReviewsForNovelCloud) {
+            await window.fetchReviewsForNovelCloud(novelId);
+        }
 
         const isFavorite = getFavorites().includes(novelId);
         const allReviews = getReviews().filter(r => r.novelId === novelId);
@@ -2821,23 +2968,240 @@
     let currentUserProfile = null;
     let novelsCache = [];
 
-    // ดึงค่าโลโก้กลางจาก Firestore ทันทีที่โหลดระบบ
-    async function fetchSiteLogoFromCloud() {
+    // ดึงค่าตั้งค่าเว็บ (โลโก้ + สถานะเปิด/ปิดรับสมัครนักเขียน) จาก Firestore
+    window.fetchSiteConfigFromCloud = async function() {
         try {
             const docRef = doc(window.db, "settings", "site_config");
             const docSnap = await getDoc(docRef);
-            if (docSnap.exists() && docSnap.data().logoUrl) {
-                globalSiteLogoCache = docSnap.data().logoUrl;
-                localStorage.setItem('mynovel_site_logo_cache', globalSiteLogoCache);
-                updateAdminHeaderLogo();
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.logoUrl) {
+                    globalSiteLogoCache = data.logoUrl;
+                    localStorage.setItem('mynovel_site_logo_cache', globalSiteLogoCache);
+                    updateAdminHeaderLogo();
+                }
+                if (typeof data.authorRecruitmentOpen === 'boolean') {
+                    localStorage.setItem('mynovel_authorRecruitmentOpen', data.authorRecruitmentOpen.toString());
+                }
             }
-        } catch (e) { console.error("Error loading site logo:", e); }
+        } catch (e) { console.error("Error loading site config:", e); }
+    };
+
+    async function fetchSiteLogoFromCloud() {
+        await window.fetchSiteConfigFromCloud();
     }
+
+    window.saveAuthorRecruitmentSettingCloud = async function(isOpen) {
+        try {
+            const docRef = doc(window.db, "settings", "site_config");
+            await setDoc(docRef, { authorRecruitmentOpen: Boolean(isOpen), recruitUpdatedAt: Date.now() }, { merge: true });
+            return true;
+        } catch (e) {
+            alert("บันทึกสถานะรับสมัครนักเขียนลงคลาวด์ไม่สำเร็จ: " + (e.message || e));
+            return false;
+        }
+    };
 
     window.saveSiteLogoToCloud = async function(base64Url) {
         const docRef = doc(window.db, "settings", "site_config");
         await setDoc(docRef, { logoUrl: base64Url, logoUpdatedAt: Date.now() }, { merge: true });
         return true;
+    };
+
+    // ==================== 1. ระบบประวัติเติมเหรียญบน Firestore (topups) ====================
+    window.fetchTopupsFromFirestore = async function() {
+        try {
+            const querySnapshot = await getDocs(collection(window.db, "topups"));
+            const cloudTopups = [];
+            querySnapshot.forEach((docSnap) => {
+                cloudTopups.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            cloudTopups.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            localStorage.setItem('mynovel_topups', JSON.stringify(cloudTopups));
+            return cloudTopups;
+        } catch (error) {
+            console.error("Error fetching topups:", error);
+            return JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+        }
+    };
+
+    window.saveTopupRecordCloud = async function(record, refreshAfter = true) {
+        try {
+            const docId = record.id || ("MN" + Date.now());
+            const payload = { ...record, id: docId, timestamp: record.timestamp || Date.now() };
+            await setDoc(doc(window.db, "topups", docId), payload, { merge: true });
+            if (refreshAfter) {
+                await window.fetchTopupsFromFirestore();
+            } else {
+                let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+                topups = [payload, ...topups.filter(item => item.id !== docId)];
+                localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            }
+            return true;
+        } catch (error) {
+            console.error("Error saving topup record:", error);
+            let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+            topups = [record, ...topups.filter(item => item.id !== record.id)];
+            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            return false;
+        }
+    };
+
+    // ==================== 2. ระบบแชทซัพพอร์ตข้ามเครื่องบน Firestore (chats) ====================
+    let unsubscribeUserChat = null;
+    let unsubscribeAdminChats = null;
+
+    window.subscribeUserChatCloud = function() {
+        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
+        if (!currentUser || !currentUser.email) return;
+        if (unsubscribeUserChat) { unsubscribeUserChat(); unsubscribeUserChat = null; }
+
+        const chatDocId = currentUser.email.toLowerCase().trim();
+        const chatRef = doc(window.db, "chats", chatDocId);
+        unsubscribeUserChat = onSnapshot(chatRef, (snap) => {
+            let chats = JSON.parse(localStorage.getItem('mynovel_chats')) || {};
+            chats[currentUser.email] = snap.exists() ? (snap.data().messages || []) : [];
+            localStorage.setItem('mynovel_chats', JSON.stringify(chats));
+            if (typeof loadUserChat === 'function') loadUserChat();
+        }, (err) => console.error("User chat listener error:", err));
+    };
+
+    window.unsubscribeUserChatCloud = function() {
+        if (unsubscribeUserChat) { unsubscribeUserChat(); unsubscribeUserChat = null; }
+    };
+
+    window.subscribeAllChatsCloud = function() {
+        if (unsubscribeAdminChats) { unsubscribeAdminChats(); unsubscribeAdminChats = null; }
+        unsubscribeAdminChats = onSnapshot(collection(window.db, "chats"), (snapshot) => {
+            const allChats = {};
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const keyEmail = data.userEmail || docSnap.id;
+                allChats[keyEmail] = Array.isArray(data.messages) ? data.messages : [];
+            });
+            localStorage.setItem('mynovel_chats', JSON.stringify(allChats));
+            if (typeof renderAdminChatUserList === 'function') renderAdminChatUserList();
+            if (selectedChatEmail && typeof selectChatUser === 'function') {
+                const msgBox = document.getElementById('adminChatMessages');
+                if (msgBox) {
+                    const userMsgs = allChats[selectedChatEmail] || [];
+                    msgBox.innerHTML = userMsgs.map(msg => `
+                        <div class="flex flex-col ${msg.sender === 'admin' ? 'items-end' : 'items-start'}">
+                            <span class="text-[10px] text-zinc-500 mb-0.5">${msg.sender === 'admin' ? 'แอดมิน (คุณ)' : escapeHtml(msg.userName || selectedChatEmail)}</span>
+                            <div class="max-w-[80%] px-3 py-2 rounded-xl text-xs ${msg.sender === 'admin' ? 'bg-red-800 text-white' : 'bg-zinc-900 border border-zinc-800'} shadow-sm">${escapeHtml(msg.text)}</div>
+                        </div>
+                    `).join('');
+                    msgBox.scrollTop = msgBox.scrollHeight;
+                }
+            }
+        }, (err) => console.error("Admin chats listener error:", err));
+    };
+
+    window.sendChatMessageCloud = async function(targetEmail, userName, msgObj) {
+        try {
+            const cleanEmail = String(targetEmail || '').toLowerCase().trim();
+            if (!cleanEmail) return false;
+            const chatRef = doc(window.db, "chats", cleanEmail);
+            await runTransaction(window.db, async (transaction) => {
+                const snap = await transaction.get(chatRef);
+                const existing = snap.exists() ? (snap.data().messages || []) : [];
+                const updated = [...existing, msgObj].slice(-100);
+                const resolvedUserName = userName || (snap.exists() ? snap.data().userName : '') || cleanEmail;
+                transaction.set(chatRef, {
+                    userEmail: cleanEmail,
+                    userName: resolvedUserName,
+                    updatedAt: Date.now(),
+                    messages: updated
+                }, { merge: true });
+            });
+            return true;
+        } catch (error) {
+            console.error("Error sending chat message:", error);
+            alert("ส่งข้อความไม่สำเร็จ: " + (error.message || error));
+            return false;
+        }
+    };
+
+    // ==================== 3. ระบบรีวิว ไลก์ และคอมเมนต์บน Firestore ====================
+    window.fetchReviewsForNovelCloud = async function(novelId) {
+        try {
+            const q = query(collection(window.db, "reviews"), where("novelId", "==", novelId));
+            const snap = await getDocs(q);
+            const novelReviews = [];
+            snap.forEach((docSnap) => {
+                novelReviews.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            novelReviews.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+            const others = (JSON.parse(localStorage.getItem('mynovel_reviews')) || []).filter(r => r.novelId !== novelId);
+            localStorage.setItem('mynovel_reviews', JSON.stringify([...novelReviews, ...others]));
+            return novelReviews;
+        } catch (error) {
+            console.error("Error fetching reviews:", error);
+            return [];
+        }
+    };
+
+    window.saveReviewToCloud = async function(reviewObj) {
+        try {
+            await setDoc(doc(window.db, "reviews", reviewObj.id), reviewObj, { merge: true });
+            await window.fetchReviewsForNovelCloud(reviewObj.novelId);
+            return true;
+        } catch (error) {
+            alert("ส่งรีวิวลงคลาวด์ไม่สำเร็จ: " + (error.message || error));
+            return false;
+        }
+    };
+
+    window.deleteReviewFromCloud = async function(reviewId, novelId) {
+        try {
+            await deleteDoc(doc(window.db, "reviews", reviewId));
+            await window.fetchReviewsForNovelCloud(novelId);
+            return true;
+        } catch (error) {
+            alert("ลบรีวิวไม่สำเร็จ: " + (error.message || error));
+            return false;
+        }
+    };
+
+    window.saveReportToCloud = async function(reportObj) {
+        try {
+            await setDoc(doc(window.db, "reports", reportObj.id), reportObj, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error saving report:", error);
+            return false;
+        }
+    };
+
+    window.fetchEpisodeInteractionCloud = async function(novelId, epId) {
+        try {
+            const docId = `${novelId}_${epId}`;
+            const snap = await getDoc(doc(window.db, "episode_interactions", docId));
+            const data = snap.exists() ? snap.data() : { likes: [], comments: [] };
+            localStorage.setItem(`mynovel_likes_${novelId}_${epId}`, JSON.stringify(Array.isArray(data.likes) ? data.likes : []));
+            localStorage.setItem(`mynovel_comments_${novelId}_${epId}`, JSON.stringify(Array.isArray(data.comments) ? data.comments : []));
+            return data;
+        } catch (error) {
+            console.error("Error fetching episode interaction:", error);
+            return { likes: [], comments: [] };
+        }
+    };
+
+    window.saveEpisodeInteractionCloud = async function(novelId, epId, likes, comments) {
+        try {
+            const docId = `${novelId}_${epId}`;
+            await setDoc(doc(window.db, "episode_interactions", docId), {
+                novelId,
+                episodeId: epId,
+                likes: Array.isArray(likes) ? likes : [],
+                comments: Array.isArray(comments) ? comments : [],
+                updatedAt: Date.now()
+            }, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error saving episode interaction:", error);
+            return false;
+        }
     };
 
     let unsubscribeUserSnapshot = null;
