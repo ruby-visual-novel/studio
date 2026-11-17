@@ -6,14 +6,6 @@
     <title>Ruby Visual Novel</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-    <script type="text/javascript">
-       (function(){
-          emailjs.init({
-            publicKey: "zauyXOQm6G2I5VKQX",
-          });
-       })();
-    </script>
 </head>
 <body id="mainBody" class="bg-black text-white min-h-screen flex flex-col font-sans transition-colors duration-300">
 
@@ -27,7 +19,7 @@
         </button>
         <h1 class="text-xl font-bold text-red-600 tracking-wider cursor-pointer flex items-center gap-2" onclick="goHome()">
             <span>Ruby Visual Novel</span>
-            <div id="adminLogoContainer" class="hidden relative group cursor-pointer" title="คลิกเพื่อเปลี่ยนโลโก้เว็บ (เฉพาะแอดมินสูงสุด)" onclick="triggerAdminLogoUpload()">
+            <div id="adminLogoContainer" class="hidden relative group cursor-pointer" title="คลิกเพื่อเปลี่ยนโลโก้เว็บ (เฉพาะแอดมินสูงสุด)" onclick="event.stopPropagation(); triggerAdminLogoUpload()">
                 <img id="adminHeaderLogoImg" src="" class="w-8 h-8 rounded-full object-cover border-2 border-red-600 shadow-sm">
                 <div class="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-[10px] text-white font-bold">📷</div>
             </div>
@@ -37,7 +29,7 @@
 
     <div class="flex items-center gap-2">
         <!-- ปุ่มกระดิ่งแจ้งเตือน -->
-        <div class="relative">
+        <div class="relative" id="notifBellWrapper">
             <button type="button" onclick="toggleNotificationModal()" class="p-2 rounded-lg hover:bg-zinc-800 focus:outline-none cursor-pointer relative">
                 <svg class="w-6 h-6 text-red-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
@@ -48,7 +40,7 @@
             <div id="notifDropdown" class="hidden absolute right-0 mt-2 w-80 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl z-50 overflow-hidden text-left">
                 <div class="p-3 bg-zinc-950 border-b border-zinc-800 flex justify-between items-center">
                     <span class="font-bold text-sm text-red-500">🔔 การแจ้งเตือนตอนใหม่</span>
-                    <button onclick="markAllNotificationsAsRead()" class="text-[11px] text-zinc-400 hover:text-white cursor-pointer">อ่านทั้งหมดแล้ว</button>
+                    <button type="button" onclick="markAllNotificationsAsRead()" class="text-[11px] text-zinc-400 hover:text-white cursor-pointer">อ่านทั้งหมดแล้ว</button>
                 </div>
                 <div id="notifList" class="max-h-80 overflow-y-auto divide-y divide-zinc-800 text-xs"></div>
             </div>
@@ -81,29 +73,29 @@
     <div id="savedAccountsSection" class="px-4 py-3 border-b border-zinc-800 bg-zinc-900"></div>
 
     <div class="p-4 flex-1 overflow-y-auto space-y-1.5 text-sm">
-        <a href="#" onclick="goHome(); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">🏠 หน้าแรก</a>
-        <a href="#" onclick="filterCategory('ทั้งหมด'); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">📚 หมวดหมู่ทั้งหมด</a>
+        <a href="#" onclick="event.preventDefault(); goHome(); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">🏠 หน้าแรก</a>
+        <a href="#" onclick="event.preventDefault(); filterCategory('ทั้งหมด'); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">📚 หมวดหมู่ทั้งหมด</a>
         <div class="pl-4 space-y-1 text-xs text-zinc-400 border-l-2 border-red-600 my-1 ml-2">
-            <a href="#" onclick="filterCategory('Romance'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Romance</a>
-            <a href="#" onclick="filterCategory('Comedy'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Comedy</a>
-            <a href="#" onclick="filterCategory('Action'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Action</a>
-            <a href="#" onclick="filterCategory('Sci-Fi'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Sci-Fi</a>
-            <a href="#" onclick="filterCategory('Fantasy'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Fantasy</a>
-            <a href="#" onclick="filterCategory('Thriller'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Thriller</a>
-            <a href="#" onclick="filterCategory('Horror'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Horror</a>
-            <a href="#" onclick="filterCategory('Historical'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Historical</a>
-            <a href="#" onclick="filterCategory('Yaoi'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Yaoi</a>
-            <a href="#" onclick="filterCategory('Yuri'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Yuri</a>
-            <a href="#" onclick="filterCategory('Imperial Era'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Imperial Era</a>
-            <a href="#" onclick="filterCategory('Ancient China'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Ancient China</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Romance'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Romance</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Comedy'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Comedy</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Action'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Action</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Sci-Fi'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Sci-Fi</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Fantasy'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Fantasy</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Thriller'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Thriller</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Horror'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Horror</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Historical'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Historical</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Yaoi'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Yaoi</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Yuri'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Yuri</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Imperial Era'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Imperial Era</a>
+            <a href="#" onclick="event.preventDefault(); filterCategory('Ancient China'); toggleSidebar();" class="block py-1.5 px-2 rounded hover:bg-zinc-800">• Ancient China</a>
         </div>
-        <a href="#" onclick="openFavorites(); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">❤️ รายการโปรด</a>
-        <a href="#" onclick="openReadingHistory(); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">📖 ประวัติการอ่าน</a>
+        <a href="#" onclick="event.preventDefault(); openFavorites(); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">❤️ รายการโปรด</a>
+        <a href="#" onclick="event.preventDefault(); openReadingHistory(); toggleSidebar();" class="block py-2 px-3 rounded-lg hover:bg-zinc-800 font-medium">📖 ประวัติการอ่าน</a>
         
-        <a id="adminMenuBtn" href="#" onclick="openAdminStudio(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-red-800 text-white hover:bg-red-900 font-semibold shadow-sm mt-3 text-center">✍️ สตูดิโอแต่งนิยาย</a>
-        <a id="writerDashboardBtn" href="#" onclick="openWriterDashboard(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 font-semibold shadow-sm mt-2 text-center">📊 แดชบอร์ดรายได้นักเขียน</a>
-        <a id="superAdminMenuBtn" href="#" onclick="openSuperAdminPanel(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 font-semibold shadow-sm mt-2 text-center">🛡️ จัดการระบบ (Admin)</a>
-        <a id="supportInboxBtn" href="#" onclick="openSupportInbox(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-red-900 text-white hover:bg-red-950 font-semibold shadow-sm mt-2 text-center">💬 กล่องข้อความซัพพอร์ต</a>
+        <a id="adminMenuBtn" href="#" onclick="event.preventDefault(); openAdminStudio(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-red-800 text-white hover:bg-red-900 font-semibold shadow-sm mt-3 text-center">✍️ สตูดิโอแต่งนิยาย</a>
+        <a id="writerDashboardBtn" href="#" onclick="event.preventDefault(); openWriterDashboard(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 font-semibold shadow-sm mt-2 text-center">📊 แดชบอร์ดรายได้นักเขียน</a>
+        <a id="superAdminMenuBtn" href="#" onclick="event.preventDefault(); openSuperAdminPanel(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-zinc-800 text-white hover:bg-zinc-700 font-semibold shadow-sm mt-2 text-center">🛡️ จัดการระบบ (Admin)</a>
+        <a id="supportInboxBtn" href="#" onclick="event.preventDefault(); openSupportInbox(); toggleSidebar();" class="hidden block py-2.5 px-3 rounded-lg bg-red-900 text-white hover:bg-red-950 font-semibold shadow-sm mt-2 text-center">💬 กล่องข้อความซัพพอร์ต</a>
     </div>
 
     <div id="authActionContainer" class="p-4 border-t border-zinc-800 bg-zinc-950"></div>
@@ -158,13 +150,13 @@
     </div>
     
     <div class="bg-black rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[650px] relative border border-zinc-800">
-        <!-- Audio & YouTube BGM Player (ใช้ขนาด 200x200 นอกหน้าจอแทน w-0 h-0 เพื่อไม่ให้ iOS/Safari บล็อก) -->
+        <!-- Audio & YouTube BGM Player -->
         <audio id="bgmAudioPlayer" loop playsinline preload="auto" class="hidden"></audio>
         <div id="youtubeBgmContainer" class="fixed -left-[9999px] top-0 w-[200px] h-[200px] opacity-0 pointer-events-none overflow-hidden">
             <iframe id="youtubeBgmIframe" width="200" height="200" src="" allow="autoplay; encrypted-media"></iframe>
         </div>
 
-        <div id="sceneBg" class="flex-1 bg-cover bg-center flex items-end justify-center pb-8 relative transition-all duration-500">
+        <div id="sceneBg" onclick="handleSceneBgTap(event)" class="flex-1 bg-cover bg-center flex items-end justify-center pb-8 relative transition-all duration-500 cursor-pointer select-none">
             <div class="text-center text-white bg-zinc-950/85 px-6 py-4 rounded-xl backdrop-blur-md max-w-[92%] border border-white/15 shadow-2xl">
                 <span id="charName" class="font-bold text-red-400 block text-left text-sm mb-1.5"></span> 
                 <span id="dialogueText" class="text-base sm:text-lg block text-left leading-relaxed transition-all"></span>
@@ -205,8 +197,8 @@
             <p class="text-xs text-zinc-400">จัดการเรื่องและตอนนิยายที่คุณแต่ง</p>
         </div>
         <div class="flex gap-2">
-            <button onclick="openAssetLibraryModal()" class="bg-zinc-800 hover:bg-zinc-700 text-white text-sm px-4 py-2 rounded-lg font-medium shadow cursor-pointer">🖼️ คลังรูปภาพ</button>
-            <button onclick="openNewNovelModal()" class="bg-red-800 hover:bg-red-900 text-white text-sm px-4 py-2 rounded-lg font-medium shadow cursor-pointer">+ เพิ่มเรื่องใหม่</button>
+            <button type="button" onclick="openAssetLibraryModal()" class="bg-zinc-800 hover:bg-zinc-700 text-white text-sm px-4 py-2 rounded-lg font-medium shadow cursor-pointer">🖼️ คลังรูปภาพ</button>
+            <button type="button" onclick="openNewNovelModal()" class="bg-red-800 hover:bg-red-900 text-white text-sm px-4 py-2 rounded-lg font-medium shadow cursor-pointer">+ เพิ่มเรื่องใหม่</button>
         </div>
     </div>
     
@@ -225,13 +217,13 @@
         <p class="text-xs text-zinc-400 mb-4">รูปภาพทั้งหมดที่คุณเคยอัปโหลดในระบบจะถูกเก็บไว้ที่นี่ สามารถคัดลอกลิงก์ไปใช้งานได้ทันที</p>
         <div class="flex gap-2 mb-4">
             <input type="file" id="assetUploadFile" accept="image/*" class="hidden" onchange="handleAssetUpload(event)">
-            <button onclick="document.getElementById('assetUploadFile').click()" class="bg-red-800 hover:bg-red-900 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">+ อัปโหลดรูปภาพใหม่เข้าคลัง</button>
+            <button type="button" onclick="document.getElementById('assetUploadFile').click()" class="bg-red-800 hover:bg-red-900 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">+ อัปโหลดรูปภาพใหม่เข้าคลัง</button>
         </div>
         <div id="assetGridList" class="grid grid-cols-3 sm:grid-cols-4 gap-3 overflow-y-auto flex-1 p-1"></div>
     </div>
 </div>
 
-<!-- Modal เลือกรูปจากคลัง (Asset Picker สำหรับเลือกใส่ฉาก/ปก และอัปโหลดจากเครื่องได้ทันที) -->
+<!-- Modal เลือกรูปจากคลัง -->
 <div id="assetPickerModal" class="hidden fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4">
     <div class="theme-card bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xl w-full p-5 shadow-xl relative max-h-[85vh] flex flex-col">
         <button type="button" onclick="closeModal('assetPickerModal')" class="absolute top-4 right-4 text-zinc-400 hover:text-white cursor-pointer">✕</button>
@@ -257,7 +249,7 @@
         <button onclick="goHome()" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-2 rounded-lg cursor-pointer">← กลับหน้าแรก</button>
     </div>
 
-    <div class="theme-card bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center gap-2">
+    <div id="writerDashboardSearchWrapper" class="hidden theme-card bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center gap-2">
         <span class="text-red-500 text-lg">🔍</span>
         <input type="text" id="searchWriterDashboardInput" onkeyup="renderWriterDashboardData()" placeholder="ค้นหาชื่อหรืออีเมลนักเขียนเพื่อดูแดชบอร์ดรายคน..." class="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
     </div>
@@ -552,6 +544,8 @@
 
 <!-- JavaScript โค้ดหลัก -->
 <script>
+    const cooldownTimers = {};
+
     function checkCooldown(actionKey, buttonId, originalText) {
         const lastActionTime = parseInt(localStorage.getItem(actionKey) || '0');
         const now = Date.now();
@@ -568,52 +562,48 @@
 
     function startCooldownTimer(actionKey, buttonId, originalText) {
         localStorage.setItem(actionKey, Date.now().toString());
-        const btn = document.getElementById(buttonId);
-        if (!btn) return;
-
-        btn.disabled = true;
-        let remaining = 60;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
-
-        const interval = setInterval(() => {
-            remaining--;
-            if (remaining > 0) {
-                btn.innerText = `⏳ รอ ${remaining}s`;
-            } else {
-                clearInterval(interval);
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                btn.innerText = originalText;
-            }
-        }, 1000);
+        runCooldownInterval(actionKey, buttonId, originalText);
     }
 
     function initButtonCooldown(actionKey, buttonId, originalText) {
         const lastActionTime = parseInt(localStorage.getItem(actionKey) || '0');
         const now = Date.now();
         const cooldownTime = 60 * 1000;
-        const elapsed = now - lastActionTime;
-
-        if (elapsed < cooldownTime) {
-            const btn = document.getElementById(buttonId);
-            if (!btn) return;
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            let remaining = Math.ceil((cooldownTime - elapsed) / 1000);
-            btn.innerText = `⏳ รอ ${remaining}s`;
-
-            const interval = setInterval(() => {
-                remaining--;
-                if (remaining > 0) {
-                    btn.innerText = `⏳ รอ ${remaining}s`;
-                } else {
-                    clearInterval(interval);
-                    btn.disabled = false;
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    btn.innerText = originalText;
-                }
-            }, 1000);
+        if (now - lastActionTime < cooldownTime) {
+            runCooldownInterval(actionKey, buttonId, originalText);
         }
+    }
+
+    function runCooldownInterval(actionKey, buttonId, originalText) {
+        if (cooldownTimers[buttonId]) {
+            clearInterval(cooldownTimers[buttonId]);
+            delete cooldownTimers[buttonId];
+        }
+        const updateBtn = () => {
+            const btn = document.getElementById(buttonId);
+            const lastActionTime = parseInt(localStorage.getItem(actionKey) || '0');
+            const remaining = Math.ceil(((60 * 1000) - (Date.now() - lastActionTime)) / 1000);
+            if (!btn) {
+                if (remaining <= 0) {
+                    clearInterval(cooldownTimers[buttonId]);
+                    delete cooldownTimers[buttonId];
+                }
+                return;
+            }
+            if (remaining > 0) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.innerText = `⏳ รอ ${remaining}s`;
+            } else {
+                clearInterval(cooldownTimers[buttonId]);
+                delete cooldownTimers[buttonId];
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerText = originalText;
+            }
+        };
+        updateBtn();
+        cooldownTimers[buttonId] = setInterval(updateBtn, 1000);
     }
 
     function changeThemeBrightness(val) {
@@ -766,7 +756,7 @@
             try {
                 const finalUrl = await resolveImageToStorageUrl(base64, 'novel_assets');
                 let assets = getAssetLibrary();
-                assets.unshift({ id: 'img_' + Date.now(), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
+                assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
                 saveAssetLibrary(assets);
                 renderAssetLibraryGrid();
                 alert("อัปโหลดรูปภาพเข้าคลังสำเร็จ! (เก็บเป็นลิงก์ Cloud Storage ไม่เปลืองพื้นที่ฐานข้อมูล)");
@@ -781,15 +771,15 @@
         const file = event.target.files[0];
         if (!file) return;
         compressImageFile(file, 960, 0.8, async function(base64) {
+            const finalUrl = await resolveImageToStorageUrl(base64, 'novel_scenes');
             try {
-                const finalUrl = await resolveImageToStorageUrl(base64, 'novel_scenes');
                 let assets = getAssetLibrary();
-                assets.unshift({ id: 'img_' + Date.now(), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
+                assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
                 saveAssetLibrary(assets);
-                selectAssetForScene(0);
             } catch (err) {
-                alert("⚠️ พื้นที่คลังรูปภาพเต็ม กรุณาลบรูปเก่าที่ไม่ใช้ออกก่อนครับ");
+                console.warn("Asset library cache full, still applying scene image directly.");
             }
+            applySelectedAssetImage(finalUrl);
             event.target.value = '';
         });
     }
@@ -801,7 +791,7 @@
             const finalUrl = await resolveImageToStorageUrl(base64, 'novel_covers');
             try {
                 let assets = getAssetLibrary();
-                assets.unshift({ id: 'img_' + Date.now(), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
+                assets.unshift({ id: 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), name: file.name, data: finalUrl, time: new Date().toLocaleString('th-TH') });
                 saveAssetLibrary(assets);
             } catch (err) {
                 console.warn("Asset library cache full, still applying cover directly.");
@@ -818,10 +808,10 @@
         if (!grid) return;
         grid.innerHTML = assets.length === 0 ? `<p class="col-span-full text-center text-zinc-500 py-6 text-xs">ยังไม่มีรูปภาพในคลังของคุณ</p>` : assets.map(a => `
             <div class="relative group bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800 aspect-square">
-                <img src="${a.data}" class="w-full h-full object-cover">
+                <img src="${escapeHtml(a.data)}" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 transition p-1">
-                    <button onclick="copyAssetUrl('${a.data}')" class="bg-red-800 text-white text-[10px] px-2 py-1 rounded w-full">คัดลอกรูป</button>
-                    <button onclick="deleteAssetItem('${a.id}')" class="bg-zinc-700 text-white text-[10px] px-2 py-1 rounded w-full">ลบ</button>
+                    <button type="button" data-url="${escapeHtml(a.data)}" onclick="copyAssetUrl(this.getAttribute('data-url'))" class="bg-red-800 text-white text-[10px] px-2 py-1 rounded w-full cursor-pointer">คัดลอกรูป</button>
+                    <button type="button" onclick="deleteAssetItem('${escapeHtml(a.id)}')" class="bg-zinc-700 text-white text-[10px] px-2 py-1 rounded w-full cursor-pointer">ลบ</button>
                 </div>
             </div>
         `).join('');
@@ -851,7 +841,7 @@
             ? `<p class="col-span-full text-center text-zinc-500 py-8 text-xs">ยังไม่มีรูปในคลัง กดปุ่ม "📤 อัปโหลดรูปใหม่จากเครื่อง" ด้านบนได้เลย</p>` 
             : assets.map((a, idx) => `
                 <div onclick="selectAssetForScene(${idx})" class="cursor-pointer group relative rounded-lg overflow-hidden border border-zinc-700 hover:border-red-500 aspect-square bg-zinc-950">
-                    <img src="${a.data}" class="w-full h-full object-cover">
+                    <img src="${escapeHtml(a.data)}" class="w-full h-full object-cover">
                     <div class="absolute inset-x-0 bottom-0 bg-black/75 text-[10px] text-center text-white py-1 opacity-0 group-hover:opacity-100 transition">
                         คลิกเพื่อใช้รูปนี้
                     </div>
@@ -860,21 +850,25 @@
         document.getElementById('assetPickerModal').classList.remove('hidden');
     }
 
-    function selectAssetForScene(assetIdx) {
-        let assets = getAssetLibrary();
-        let selectedImg = assets[assetIdx]?.data;
+    function applySelectedAssetImage(selectedImg) {
         if (!selectedImg) return;
-
         if (activeAssetPickerTarget === 'cover') {
             document.getElementById('novelCoverInput').value = selectedImg;
             previewCoverInput(selectedImg);
-        } else if (activeAssetPickerTarget === 'scene' && activeAssetPickerIndex !== null) {
+        } else if (activeAssetPickerTarget === 'scene' && activeAssetPickerIndex !== null && tempScenes[activeAssetPickerIndex]) {
             tempScenes[activeAssetPickerIndex].bg = selectedImg;
-            document.getElementById(`sceneBgInput_${activeAssetPickerIndex}`).value = selectedImg;
+            const bgInput = document.getElementById(`sceneBgInput_${activeAssetPickerIndex}`);
+            if (bgInput) bgInput.value = selectedImg;
             previewSceneBgInput(activeAssetPickerIndex, selectedImg);
             triggerAutosave();
         }
         closeModal('assetPickerModal');
+    }
+
+    function selectAssetForScene(assetIdx) {
+        let assets = getAssetLibrary();
+        let selectedImg = assets[assetIdx]?.data;
+        applySelectedAssetImage(selectedImg);
     }
 
     function getSavedAccounts() {
@@ -972,9 +966,9 @@
             <p class="text-xs font-semibold text-zinc-400 mb-2">🔁 บัญชีที่เคยเข้าสู่ระบบ</p>
             <div class="space-y-1">
                 ${accounts.map(acc => `
-                    <button type="button" onclick="selectSavedAccount('${acc.email}')" class="w-full flex items-center gap-2 text-left p-2 rounded-lg hover:bg-zinc-800 border border-transparent hover:border-zinc-700 cursor-pointer">
+                    <button type="button" data-email="${escapeHtml(acc.email)}" onclick="selectSavedAccount(this.getAttribute('data-email'))" class="w-full flex items-center gap-2 text-left p-2 rounded-lg hover:bg-zinc-800 border border-transparent hover:border-zinc-700 cursor-pointer">
                         <span class="w-8 h-8 rounded-full bg-zinc-800 text-red-500 flex items-center justify-center text-sm">👤</span>
-                        <span class="min-w-0 flex-1"><span class="block text-xs font-semibold truncate">${acc.name}</span><span class="block text-[11px] text-zinc-400 truncate">${acc.email}</span></span>
+                        <span class="min-w-0 flex-1"><span class="block text-xs font-semibold truncate">${escapeHtml(acc.name)}</span><span class="block text-[11px] text-zinc-400 truncate">${escapeHtml(acc.email)}</span></span>
                         <span class="text-[11px] text-red-400 font-medium">สลับ</span>
                     </button>
                 `).join('')}
@@ -984,7 +978,7 @@
     }
 
     function selectSavedAccount(email) {
-        toggleSidebar();
+        closeSidebarIfOpen();
         switchAuthTab('login');
         document.getElementById('loginEmail').value = email;
         document.getElementById('loginPassword').value = '';
@@ -998,7 +992,7 @@
         renderSavedAccounts();
     }
 
-    /* 🛡️ ฟังก์ชันอัปเดตโลโก้เว็บให้แสดงผลทุกคน พร้อมระบบแคช LocalStorage กันโลโก้หายเวลารีเฟรชหรือสลับบัญชี */
+    /* 🛡️ ฟังก์ชันอัปเดตโลโก้เว็บให้แสดงผลทุกคน พร้อมระบบแคช LocalStorage */
     let globalSiteLogoCache = localStorage.getItem('mynovel_site_logo_cache') || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
 
     function updateAdminHeaderLogo() {
@@ -1094,8 +1088,8 @@
             }
 
             profileSection.innerHTML = `
-                <p class="font-bold text-sm">${currentUser.name} ${badge}</p>
-                <p class="text-xs text-zinc-400 mb-1">${currentUser.email}</p>
+                <p class="font-bold text-sm">${escapeHtml(currentUser.name)} ${badge}</p>
+                <p class="text-xs text-zinc-400 mb-1">${escapeHtml(currentUser.email)}</p>
                 ${coinSectionHtml}
                 ${actionHtml}
             `;
@@ -1226,7 +1220,7 @@
     function openTopupModal() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อน"); openAuthModal('login'); return; }
-        toggleSidebar();
+        closeSidebarIfOpen();
         document.getElementById('topupModal').classList.remove('hidden');
     }
 
@@ -1283,17 +1277,18 @@
             if (targetEmail) {
                 return (u.authorEmail || '').toLowerCase().trim() === targetEmail || matchedNovelIds.has(u.novelId);
             }
+            if (isAdminRole && searchQuery) {
+                const uAuthor = (u.authorEmail || '').toLowerCase().trim();
+                return matchedNovelIds.has(u.novelId) || uAuthor.includes(searchQuery);
+            }
             return matchedNovelIds.has(u.novelId);
         });
 
-        // คำนวณยอดเหรียญรวมจากราคาตอนที่ถูกปลดล็อกจริง
         let totalCoins = matchedUnlocks.reduce((sum, u) => sum + Math.max(0, Number(u.price) || 0), 0);
-        // คำนวณเป็นสตางค์ (1 เหรียญ = 100 สตางค์, 80% = * 80 สตางค์) และปัดเศษลงเสมอ (Math.floor) เพื่อไม่ให้จ่ายเกิน 80% เด็ดขาด
         let gross80Satang = Math.floor(totalCoins * 80);
         let earnings80 = gross80Satang / 100;
         let company20 = Math.max(0, Number((totalCoins - earnings80).toFixed(2)));
 
-        // กรองประวัติการเบิกเงินของนักเขียนคนดังกล่าว
         let matchedWithdrawals = withdrawals.filter(w => {
             const wEmail = (w.authorEmail || '').toLowerCase().trim();
             if (targetEmail) return wEmail === targetEmail;
@@ -1329,6 +1324,15 @@
         }
         hideAllViews();
         document.getElementById('writerDashboardView').classList.remove('hidden');
+        const searchWrap = document.getElementById('writerDashboardSearchWrapper');
+        if (searchWrap) {
+            const isAdminViewer = currentUser.role === 'super_admin' || currentUser.role === 'admin';
+            searchWrap.classList.toggle('hidden', !isAdminViewer);
+            if (!isAdminViewer) {
+                const inp = document.getElementById('searchWriterDashboardInput');
+                if (inp) inp.value = '';
+            }
+        }
         const listContainer = document.getElementById('writerUnlockHistoryList');
         if (listContainer) {
             listContainer.innerHTML = `<p class="text-xs text-zinc-400 text-center py-4">⏳ กำลังโหลดข้อมูลรายได้และยอดเบิกจ่ายล่าสุดจากคลาวด์...</p>`;
@@ -1359,7 +1363,7 @@
             <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
                 <div>
                     <p class="font-bold text-zinc-200">${escapeHtml(u.novelTitle)} - ${escapeHtml(u.episodeTitle)}</p>
-                    <p class="text-zinc-500 mt-0.5">นักเขียน: ${escapeHtml(u.authorEmail || 'ไม่ระบุ')} | ผู้อ่าน: ${escapeHtml(u.readerEmail)} | เวลา: ${u.time}</p>
+                    <p class="text-zinc-500 mt-0.5">นักเขียน: ${escapeHtml(u.authorEmail || 'ไม่ระบุ')} | ผู้อ่าน: ${escapeHtml(u.readerEmail)} | เวลา: ${escapeHtml(u.time)}</p>
                 </div>
                 <div class="text-right">
                     <span class="text-amber-400 font-bold">+${u.price} เหรียญ</span>
@@ -1371,34 +1375,38 @@
 
     async function openSuperAdminPanel() {
         const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-        if (!currentUser || currentUser.role !== 'super_admin') { 
-            alert("สิทธิ์เฉพาะแอดมินสูงสุดเท่านั้น!"); 
+        if (!currentUser || (currentUser.role !== 'super_admin' && currentUser.role !== 'admin')) { 
+            alert("ไม่มีสิทธิ์เข้าถึงหน้าจัดการระบบ!"); 
             return; 
         }
+        const isSuperAdmin = currentUser.role === 'super_admin';
         hideAllViews();
         document.getElementById('superAdminView').classList.remove('hidden');
-        document.getElementById('superAdminOnlySettings').style.display = 'block';
-        renderAuthorRecruitmentSettingBtn();
-        renderPendingTopups();
-        renderSuperAdminTopupHistory();
-        renderPendingAuthors();
+        document.getElementById('superAdminOnlySettings').style.display = isSuperAdmin ? 'block' : 'none';
+        if (isSuperAdmin) {
+            renderAuthorRecruitmentSettingBtn();
+            renderPendingTopups();
+            renderSuperAdminTopupHistory();
+            renderPendingAuthors();
+        }
         renderAdminManagementList();
         renderActiveAuthorList();
 
-        // โหลดข้อมูลล่าสุดจากคลาวด์ทั้งหมด (ตั้งค่า, ประวัติเติมเหรียญ, นิยาย, ยอดขาย, เบิกเงิน)
-        if (window.fetchSiteConfigFromCloud) {
-            await window.fetchSiteConfigFromCloud();
-            renderAuthorRecruitmentSettingBtn();
+        if (isSuperAdmin) {
+            if (window.fetchSiteConfigFromCloud) {
+                await window.fetchSiteConfigFromCloud();
+                renderAuthorRecruitmentSettingBtn();
+            }
+            if (window.fetchTopupsFromFirestore) {
+                await window.fetchTopupsFromFirestore();
+                renderPendingTopups();
+                renderSuperAdminTopupHistory();
+            }
+            if (window.fetchNovelsFromFirestore) await window.fetchNovelsFromFirestore();
+            if (window.fetchUnlocksFromFirestore) await window.fetchUnlocksFromFirestore();
+            if (window.fetchWithdrawalsFromFirestore) await window.fetchWithdrawalsFromFirestore();
+            renderRecentWithdrawalsList();
         }
-        if (window.fetchTopupsFromFirestore) {
-            await window.fetchTopupsFromFirestore();
-            renderPendingTopups();
-            renderSuperAdminTopupHistory();
-        }
-        if (window.fetchNovelsFromFirestore) await window.fetchNovelsFromFirestore();
-        if (window.fetchUnlocksFromFirestore) await window.fetchUnlocksFromFirestore();
-        if (window.fetchWithdrawalsFromFirestore) await window.fetchWithdrawalsFromFirestore();
-        renderRecentWithdrawalsList();
     }
 
     let currentInspectedAuthorStats = null;
@@ -1578,7 +1586,6 @@
         if (!authorEmail) { alert("กรุณากรอกอีเมลของนักเขียน"); return; }
         if (isNaN(rawAmount) || rawAmount <= 0) { alert("กรุณากรอกจำนวนเงินให้ถูกต้อง (มากกว่า 0)"); return; }
 
-        // ปัดทศนิยม 2 ตำแหน่ง (ระดับสตางค์)
         const amountSatang = Math.round(rawAmount * 100);
         const amountBaht = amountSatang / 100;
         if (amountBaht <= 0) { alert("จำนวนเงินต้องมากกว่า 0.00 บาท"); return; }
@@ -1588,7 +1595,6 @@
         if (btn) { btn.disabled = true; btn.innerText = "⏳ กำลังตรวจสอบยอด..."; }
 
         try {
-            // ดึงข้อมูลสดจาก Firestore เสมอก่อนอนุมัติเบิก เพื่อกันข้อมูลค้างหรือเบิกซ้ำซ้อน
             const stats = await inspectAuthorWithdrawBalance(false);
             if (!stats || !stats.userInfo) {
                 alert(`⚠️ ไม่พบบัญชีนักเขียนอีเมล "${authorEmail}" ในระบบ`);
@@ -1602,31 +1608,19 @@
             }
 
             if (amountSatang > availSatang) {
-                alert(`⛔ ป้องกันการจ่ายเงินเกินสิทธิ์ (80/20)!
-
-` +
-                      `• ยอดขายตอนรวม (100%): ${stats.totalCoins} เหรียญ
-` +
-                      `• ส่วนแบ่งนักเขียนทั้งหมด (80%): ${stats.earnings80.toFixed(2)} บาท
-` +
-                      `• เบิกเงินไปแล้ว: ${stats.withdrawnBaht.toFixed(2)} บาท
-` +
-                      `• ยอดสูงสุดที่เบิกได้จริง: ${stats.availableBaht.toFixed(2)} บาท
-
-` +
+                alert(`⛔ ป้องกันการจ่ายเงินเกินสิทธิ์ (80/20)!\n\n` +
+                      `• ยอดขายตอนรวม (100%): ${stats.totalCoins} เหรียญ\n` +
+                      `• ส่วนแบ่งนักเขียนทั้งหมด (80%): ${stats.earnings80.toFixed(2)} บาท\n` +
+                      `• เบิกเงินไปแล้ว: ${stats.withdrawnBaht.toFixed(2)} บาท\n` +
+                      `• ยอดสูงสุดที่เบิกได้จริง: ${stats.availableBaht.toFixed(2)} บาท\n\n` +
                       `คุณกรอกยอดเบิก ${amountBaht.toFixed(2)} บาท ซึ่งเกินสิทธิ์อยู่ ${((amountSatang - availSatang)/100).toFixed(2)} บาท`);
                 return;
             }
 
-            const confirmMsg = `ยืนยันการเบิกเงินให้นักเขียน (${authorEmail})
-` +
-                               `• จำนวนเงินที่เบิกครั้งนี้: ${amountBaht.toFixed(2)} บาท
-` +
-                               `• ยอดเบิกได้ก่อนทำรายการ: ${stats.availableBaht.toFixed(2)} บาท
-` +
-                               `• ยอดคงเหลือหลังเบิก: ${((availSatang - amountSatang)/100).toFixed(2)} บาท
-
-` +
+            const confirmMsg = `ยืนยันการเบิกเงินให้นักเขียน (${authorEmail})\n` +
+                               `• จำนวนเงินที่เบิกครั้งนี้: ${amountBaht.toFixed(2)} บาท\n` +
+                               `• ยอดเบิกได้ก่อนทำรายการ: ${stats.availableBaht.toFixed(2)} บาท\n` +
+                               `• ยอดคงเหลือหลังเบิก: ${((availSatang - amountSatang)/100).toFixed(2)} บาท\n\n` +
                                `กด "ตกลง" เพื่อยืนยันและหักยอดรายได้ทันที`;
             if (!confirm(confirmMsg)) return;
 
@@ -1648,6 +1642,7 @@
     function renderAuthorRecruitmentSettingBtn() {
         const isOpen = localStorage.getItem('mynovel_authorRecruitmentOpen') === 'true';
         const btn = document.getElementById('toggleAuthorRecruitBtn');
+        if (!btn) return;
         if (isOpen) {
             btn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow cursor-pointer";
             btn.innerText = "🟢 สถานะ: เปิดรับสมัคร (คลิกเพื่อปิด)";
@@ -1693,13 +1688,13 @@
                     <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-sm text-xs gap-3">
                         <div>
                             <p class="font-bold text-sm">${escapeHtml(t.name)} (${escapeHtml(t.email)})</p>
-                            <p class="text-zinc-400 mt-0.5">เวลาแจ้ง: ${t.time}</p>
+                            <p class="text-zinc-400 mt-0.5">เวลาแจ้ง: ${escapeHtml(t.time)}</p>
                             <p class="mt-1 font-semibold text-amber-500">สถานะ: ⏳ รอเติมเหรียญ (แอดมินจัดการทาง LINE)</p>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <input type="number" id="inputCoins_${t.id}" min="1" value="${t.coins || ''}" placeholder="ระบุจำนวนเหรียญ" class="w-32 px-2.5 py-1.5 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
-                            <button onclick="approveTopupWithCustomCoins('${t.id}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ยืนยันเติม</button>
-                            <button onclick="approveTopupWithCustomCoins('${t.id}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปฏิเสธ</button>
+                            <input type="number" id="inputCoins_${escapeHtml(t.id)}" min="1" value="${t.coins || ''}" placeholder="ระบุจำนวนเหรียญ" class="w-32 px-2.5 py-1.5 border border-zinc-700 bg-zinc-950 text-white rounded-lg text-xs">
+                            <button onclick="approveTopupWithCustomCoins('${escapeHtml(t.id)}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ยืนยันเติม</button>
+                            <button onclick="approveTopupWithCustomCoins('${escapeHtml(t.id)}', false)" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปฏิเสธ</button>
                         </div>
                     </div>
                 `;
@@ -1720,7 +1715,9 @@
         }
     }
 
+    let isProcessingDirectTopup = false;
     async function addDirectTopupCoins(email, isDeduct = false) {
+        if (isProcessingDirectTopup) return;
         const input = document.getElementById('directCoins_' + encodeURIComponent(email));
         const coins = Number.parseInt(input?.value, 10);
         if (!Number.isInteger(coins) || coins <= 0) {
@@ -1734,28 +1731,33 @@
             alert("ระบบเติมเหรียญยังไม่พร้อม กรุณาลองใหม่");
             return;
         }
-        const res = await window.addCoinsToCustomerCloud(email, delta);
-        if (res && res.success) {
-            const record = {
-                id: "MN" + Date.now(),
-                name: email,
-                email: email,
-                coins: delta,
-                timestamp: Date.now(),
-                time: new Date().toLocaleString('th-TH'),
-                status: isDeduct ? 'reverted' : 'approved'
-            };
-            if (window.saveTopupRecordCloud) {
-                await window.saveTopupRecordCloud(record, true);
-            } else {
-                let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
-                topups.unshift(record);
-                localStorage.setItem('mynovel_topups', JSON.stringify(topups));
-            }
+        isProcessingDirectTopup = true;
+        try {
+            const res = await window.addCoinsToCustomerCloud(email, delta);
+            if (res && res.success) {
+                const record = {
+                    id: "MN" + Date.now(),
+                    name: email,
+                    email: email,
+                    coins: delta,
+                    timestamp: Date.now(),
+                    time: new Date().toLocaleString('th-TH'),
+                    status: isDeduct ? 'reverted' : 'approved'
+                };
+                if (window.saveTopupRecordCloud) {
+                    await window.saveTopupRecordCloud(record, true);
+                } else {
+                    let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+                    topups.unshift(record);
+                    localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+                }
 
-            alert(`${isDeduct ? 'ดึงเหรียญกลับ' : 'เติมเหรียญ'}สำเร็จ! ยอดคงเหลือปัจจุบันของ ${email} คือ ${res.newCoins} เหรียญ`);
-            renderPendingTopups();
-            renderSuperAdminTopupHistory();
+                alert(`${isDeduct ? 'ดึงเหรียญกลับ' : 'เติมเหรียญ'}สำเร็จ! ยอดคงเหลือปัจจุบันของ ${email} คือ ${res.newCoins} เหรียญ`);
+                renderPendingTopups();
+                renderSuperAdminTopupHistory();
+            }
+        } finally {
+            isProcessingDirectTopup = false;
         }
     }
 
@@ -1773,13 +1775,13 @@
                 <div>
                     <span class="font-bold">${escapeHtml(t.name)}</span> 
                     <span class="text-zinc-400">(${escapeHtml(t.email)})</span>
-                    <p class="text-zinc-500 mt-0.5">เวลา: ${t.time}</p>
+                    <p class="text-zinc-500 mt-0.5">เวลา: ${escapeHtml(t.time)}</p>
                 </div>
                 <div class="text-right flex items-center gap-3">
                     <span class="font-semibold ${t.status === 'approved' ? 'text-emerald-400' : (t.status === 'reverted' ? 'text-orange-400' : (t.status === 'rejected' ? 'text-red-400' : 'text-amber-400'))}">
                         ${t.status === 'approved' ? '✅ เติมสำเร็จ (+' + Math.abs(t.coins) + ' เหรียญ)' : (t.status === 'reverted' ? '↩️ ดึงเหรียญกลับแล้ว (-' + Math.abs(t.coins) + ' เหรียญ)' : (t.status === 'rejected' ? '❌ ถูกปฏิเสธ' : '⏳ กำลังรอตรวจสอบ'))}
                     </span>
-                    ${t.status === 'approved' ? `<button onclick="revertTopup('${t.id}')" class="bg-red-800 hover:bg-red-900 text-white px-2 py-1 rounded text-[11px] cursor-pointer">ดึงเงินกลับ</button>` : ''}
+                    ${t.status === 'approved' ? `<button onclick="revertTopup('${escapeHtml(t.id)}')" class="bg-red-800 hover:bg-red-900 text-white px-2 py-1 rounded text-[11px] cursor-pointer">ดึงเงินกลับ</button>` : ''}
                 </div>
             </div>
         `).join('');
@@ -1788,48 +1790,57 @@
         }
     }
 
+    let isApprovingTopup = false;
     async function approveTopupWithCustomCoins(topupId, isApproved) {
+        if (isApprovingTopup) return;
         let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
         let t = topups.find(item => item.id === topupId);
-        if (!t) return;
+        if (!t || t.status !== 'pending') return;
 
-        if (!isApproved) {
-            t.status = 'rejected';
+        isApprovingTopup = true;
+        try {
+            if (!isApproved) {
+                t.status = 'rejected';
+                if (window.saveTopupRecordCloud) {
+                    await window.saveTopupRecordCloud(t, true);
+                } else {
+                    localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+                }
+                renderPendingTopups();
+                renderSuperAdminTopupHistory();
+                alert("ปฏิเสธรายการเรียบร้อยแล้ว");
+                return;
+            }
+
+            let inputVal = document.getElementById(`inputCoins_${topupId}`)?.value;
+            let coinsToAdd = parseInt(inputVal, 10);
+            if (isNaN(coinsToAdd) || coinsToAdd <= 0) { alert("กรุณากรอกจำนวนเหรียญให้ถูกต้อง มากกว่า 0"); return; }
+
+            let res = null;
+            if (window.updateUserCoinsCloud) {
+                res = await window.updateUserCoinsCloud(t.email, coinsToAdd);
+                if (!res || !res.success) return;
+            }
+
+            t.coins = coinsToAdd;
+            t.status = 'approved';
             if (window.saveTopupRecordCloud) {
                 await window.saveTopupRecordCloud(t, true);
             } else {
                 localStorage.setItem('mynovel_topups', JSON.stringify(topups));
             }
+
             renderPendingTopups();
             renderSuperAdminTopupHistory();
-            alert("ปฏิเสธรายการเรียบร้อยแล้ว");
-            return;
+            alert(`เติม ${coinsToAdd} เหรียญ ให้ ${t.email} สำเร็จ! (ยอดคงเหลือของลูกค้า: ${res ? res.newCoins : coinsToAdd} เหรียญ)`);
+        } finally {
+            isApprovingTopup = false;
         }
-
-        let inputVal = document.getElementById(`inputCoins_${topupId}`).value;
-        let coinsToAdd = parseInt(inputVal);
-        if (isNaN(coinsToAdd) || coinsToAdd <= 0) { alert("กรุณากรอกจำนวนเหรียญให้ถูกต้อง มากกว่า 0"); return; }
-
-        let res = null;
-        if (window.updateUserCoinsCloud) {
-            res = await window.updateUserCoinsCloud(t.email, coinsToAdd);
-            if (!res || !res.success) return;
-        }
-
-        t.coins = coinsToAdd;
-        t.status = 'approved';
-        if (window.saveTopupRecordCloud) {
-            await window.saveTopupRecordCloud(t, true);
-        } else {
-            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
-        }
-
-        renderPendingTopups();
-        renderSuperAdminTopupHistory();
-        alert(`เติม ${coinsToAdd} เหรียญ ให้ ${t.email} สำเร็จ! (ยอดคงเหลือของลูกค้า: ${res ? res.newCoins : coinsToAdd} เหรียญ)`);
     }
 
+    let isRevertingTopup = false;
     async function revertTopup(topupId) {
+        if (isRevertingTopup) return;
         let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
         let t = topups.find(item => item.id === topupId);
         if (!t || t.status !== 'approved') return;
@@ -1837,21 +1848,26 @@
         let coinsToDeduct = Math.abs(t.coins || 0);
         if (!confirm(`คุณต้องการดึงเงิน/เหรียญกลับจำนวน ${coinsToDeduct} เหรียญ จากบัญชี (${t.email}) ใช่หรือไม่? (หากลูกค้าใช้เหรียญไปแล้ว ยอดจะติดลบ -${coinsToDeduct})`)) return;
 
-        let res = null;
-        if (window.updateUserCoinsCloud) {
-            res = await window.updateUserCoinsCloud(t.email, -coinsToDeduct);
-            if (!res || !res.success) return;
+        isRevertingTopup = true;
+        try {
+            let res = null;
+            if (window.updateUserCoinsCloud) {
+                res = await window.updateUserCoinsCloud(t.email, -coinsToDeduct);
+                if (!res || !res.success) return;
+            }
+            t.status = 'reverted';
+            t.coins = -coinsToDeduct;
+            if (window.saveTopupRecordCloud) {
+                await window.saveTopupRecordCloud(t, true);
+            } else {
+                localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+            }
+            renderPendingTopups();
+            renderSuperAdminTopupHistory();
+            alert(`ดึงเหรียญกลับ ${coinsToDeduct} เหรียญ เรียบร้อยแล้ว! (ยอดคงเหลือปัจจุบันของลูกค้า: ${res ? res.newCoins : 0} เหรียญ)`);
+        } finally {
+            isRevertingTopup = false;
         }
-        t.status = 'reverted';
-        t.coins = -coinsToDeduct;
-        if (window.saveTopupRecordCloud) {
-            await window.saveTopupRecordCloud(t, true);
-        } else {
-            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
-        }
-        renderPendingTopups();
-        renderSuperAdminTopupHistory();
-        alert(`ดึงเหรียญกลับ ${coinsToDeduct} เหรียญ เรียบร้อยแล้ว! (ยอดคงเหลือปัจจุบันของลูกค้า: ${res ? res.newCoins : 0} เหรียญ)`);
     }
 
     function renderPendingAuthors() { if (window.getPendingAuthorsCloud) window.getPendingAuthorsCloud(); }
@@ -1870,14 +1886,23 @@
         if (window.updateAuthorRoleCloud) window.updateAuthorRoleCloud(email, 'customer');
     }
 
-    function requestToBeAuthor() {
+    let isRequestingAuthor = false;
+    async function requestToBeAuthor() {
+        if (isRequestingAuthor) return;
         if (localStorage.getItem('mynovel_authorRecruitmentOpen') !== 'true') { alert("ขณะนี้ระบบปิดรับสมัครนักเขียนชั่วคราว"); return; }
         let currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
         if (!currentUser) { alert("กรุณาเข้าสู่ระบบก่อน"); openAuthModal('login'); return; }
         if ((currentUser.coins || 0) < 349) { alert("เหรียญไม่พอสำหรับค่าสมัคร 349 เหรียญ"); return; }
         if (!confirm("ชำระค่าสมัคร 349 เหรียญ เพื่อสมัครเป็นนักเขียน? (คำขอจะส่งตรงไปยังหน้าจัดการคำขอเป็นนักเขียนของแอดมิน)")) return;
         
-        if (window.requestAuthorCloud) window.requestAuthorCloud(currentUser.email, 349);
+        if (window.requestAuthorCloud) {
+            isRequestingAuthor = true;
+            try {
+                await window.requestAuthorCloud(currentUser.email, 349);
+            } finally {
+                isRequestingAuthor = false;
+            }
+        }
     }
 
     let activeNovelId = null;
@@ -1937,7 +1962,7 @@
                     unlockingEpisodeInProgress = false;
                 }
             }
-            return; // หยุดรอให้ unlockEpisodeCloud ตัดเหรียญสำเร็จแล้วค่อยเรียก startReadingEpisode(..., true)
+            return;
         }
 
         activeNovelId = novelId;
@@ -2047,12 +2072,12 @@
             <div class="bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 text-xs space-y-1">
                 <div class="flex justify-between items-center">
                     <span class="font-bold text-red-400">${escapeHtml(c.userName)}</span>
-                    <span class="text-[10px] text-zinc-500">${c.time}</span>
+                    <span class="text-[10px] text-zinc-500">${escapeHtml(c.time)}</span>
                 </div>
                 <p class="text-zinc-200">${escapeHtml(c.text)}</p>
                 ${(currentUser && (currentUser.email === c.userEmail || currentUser.role === 'super_admin' || currentUser.role === 'admin')) ? `
                     <div class="text-right">
-                        <button onclick="deleteEpisodeComment('${c.id}')" class="text-[10px] text-red-500 hover:underline cursor-pointer">ลบ</button>
+                        <button onclick="deleteEpisodeComment('${escapeHtml(c.id)}')" class="text-[10px] text-red-500 hover:underline cursor-pointer">ลบ</button>
                     </div>
                 ` : ''}
             </div>
@@ -2200,8 +2225,20 @@
         selectChatUser(selectedChatEmail);
     }
 
-    function openAuthModal(tab) { toggleSidebar(); switchAuthTab(tab); document.getElementById('authModal').classList.remove('hidden'); }
-    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    function closeSidebarIfOpen() {
+        const sb = document.getElementById('sidebar');
+        const bd = document.getElementById('sidebarBackdrop');
+        if (sb && !sb.classList.contains('-translate-x-full')) sb.classList.add('-translate-x-full');
+        if (bd && !bd.classList.contains('hidden')) bd.classList.add('hidden');
+    }
+
+    function openAuthModal(tab) { closeSidebarIfOpen(); switchAuthTab(tab); document.getElementById('authModal').classList.remove('hidden'); }
+    function closeModal(modalId) {
+        if (modalId === 'episodeEditorModal' && typeof draftSaveTimer !== 'undefined') {
+            clearTimeout(draftSaveTimer);
+        }
+        document.getElementById(modalId).classList.add('hidden');
+    }
     function switchAuthTab(tab) {
         ['loginForm', 'registerForm', 'forgotForm'].forEach(id => document.getElementById(id).classList.add('hidden'));
         if (tab === 'login') document.getElementById('loginForm').classList.remove('hidden');
@@ -2299,7 +2336,7 @@
         if (!email || !activeNovelId || !activeEpisodeId) return;
         let history = getReadingHistory();
         let novel = getNovels().find(n => n.id === activeNovelId);
-        let ep = novel?.episodes.find(e => e.id === activeEpisodeId);
+        let ep = (novel?.episodes || []).find(e => e.id === activeEpisodeId);
         if (!novel || !ep) return;
         let updated = history.filter(item => !(item.novelId === activeNovelId && item.episodeId === activeEpisodeId));
         updated.unshift({ novelId: activeNovelId, episodeId: activeEpisodeId, episodeTitle: ep.title, sceneIndex: currentSceneIndex, updatedAt: Date.now() });
@@ -2318,18 +2355,18 @@
             let novel = novels.find(n => n.id === item.novelId);
             return `
                 <div class="theme-card bg-zinc-900 rounded-xl border border-zinc-800 p-3 flex gap-3 items-center">
-                    <img src="${novel.cover}" class="w-20 h-24 object-cover rounded-lg">
+                    <img src="${escapeHtml(novel.cover)}" class="w-20 h-24 object-cover rounded-lg">
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-sm">${escapeHtml(novel.title)}</h3>
                         <p class="text-xs text-zinc-400 mt-1">${escapeHtml(item.episodeTitle)} (ฉากที่ ${item.sceneIndex + 1})</p>
-                        <button onclick="resumeReading('${item.novelId}', '${item.episodeId}', ${item.sceneIndex})" class="mt-2 bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">อ่านต่อจากจุดเดิม</button>
+                        <button type="button" onclick="resumeReading('${escapeHtml(item.novelId)}', '${escapeHtml(item.episodeId)}', ${Number(item.sceneIndex) || 0})" class="mt-2 bg-red-800 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">อ่านต่อจากจุดเดิม</button>
                     </div>
                 </div>
             `;
         }).join('');
     }
 
-    function resumeReading(novelId, episodeId, sceneIndex) { startReadingEpisode(novelId, episodeId, sceneIndex, true); }
+    function resumeReading(novelId, episodeId, sceneIndex) { startReadingEpisode(novelId, episodeId, sceneIndex, false); }
 
     let currentCategory = 'ทั้งหมด';
     function filterCategory(cat) {
@@ -2359,7 +2396,7 @@
                     </div>
                     <div class="flex items-center justify-between text-xs text-zinc-400 mt-2 pt-2 border-t border-zinc-800">
                         <span>โดย ${escapeHtml(novel.author)}</span>
-                        <span>${novel.episodeCount !== undefined ? novel.episodeCount : (novel.episodes || []).filter(e => e.published !== false).length} ตอน</span>
+                        <span>${Array.isArray(novel.episodes) ? novel.episodes.filter(e => e.published !== false).length : (novel.episodeCount || 0)} ตอน</span>
                     </div>
                 </div>
                 ${isAdmin ? `
@@ -2371,15 +2408,20 @@
         `).join('');
     }
 
-    async function openNovelDetail(novelId) {
+    async function openNovelDetail(novelId, skipCloudFetch = false) {
         activeNovelId = novelId;
-        const novel = getNovels().find(n => n.id === novelId);
+        let novel = getNovels().find(n => n.id === novelId);
+        if (!novel && !skipCloudFetch && window.fetchNovelsFromFirestore) {
+            await window.fetchNovelsFromFirestore();
+            novel = getNovels().find(n => n.id === novelId);
+        }
         if (!novel) return;
         hideAllViews();
         document.getElementById('novelDetailView').classList.remove('hidden');
 
-        if (window.fetchReviewsForNovelCloud) {
+        if (!skipCloudFetch && window.fetchReviewsForNovelCloud) {
             await window.fetchReviewsForNovelCloud(novelId);
+            novel = getNovels().find(n => n.id === novelId) || novel;
         }
 
         const isFavorite = getFavorites().includes(novelId);
@@ -2394,23 +2436,23 @@
 
         document.getElementById('novelDetailContent').innerHTML = `
             <div class="flex flex-col sm:flex-row gap-5 pb-5 border-b border-zinc-800">
-                <img src="${novel.cover}" class="w-32 h-44 object-cover rounded-xl shadow mx-auto sm:mx-0">
+                <img src="${escapeHtml(novel.cover)}" class="w-32 h-44 object-cover rounded-xl shadow mx-auto sm:mx-0">
                 <div class="flex-1 text-center sm:text-left">
                     <div class="flex items-center justify-center sm:justify-between gap-2">
-                        <span class="text-xs bg-red-950 text-red-400 px-2.5 py-0.5 rounded-full font-medium border border-red-900">${novel.category}</span>
-                        ${isAdmin ? `<button onclick="deleteNovel('${novel.id}')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg font-bold shadow cursor-pointer">🗑️ ลบนิยายเรื่องนี้</button>` : ''}
+                        <span class="text-xs bg-red-950 text-red-400 px-2.5 py-0.5 rounded-full font-medium border border-red-900">${escapeHtml(novel.category)}</span>
+                        ${isAdmin ? `<button type="button" onclick="deleteNovel('${escapeHtml(novel.id)}')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1 rounded-lg font-bold shadow cursor-pointer">🗑️ ลบนิยายเรื่องนี้</button>` : ''}
                     </div>
                     <h2 class="text-xl font-bold mt-2">${escapeHtml(novel.title)}</h2>
                     <p class="text-xs text-zinc-400 mt-1">ผู้แต่ง: ${escapeHtml(novel.author)}</p>
                     <p class="text-xs text-amber-500 font-semibold mt-1">⭐ ${avgRating} (${allReviews.length} รีวิว)</p>
                     <p class="text-sm text-zinc-300 mt-3">${escapeHtml(novel.description || '')}</p>
-                    <button onclick="toggleFavorite('${novel.id}')" class="mt-4 w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold text-sm cursor-pointer ${isFavorite ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-red-800 text-white'}">${isFavorite ? '❤️ ในรายการโปรด' : '♡ เพิ่มลงรายการโปรด'}</button>
+                    <button type="button" onclick="toggleFavorite('${escapeHtml(novel.id)}')" class="mt-4 w-full sm:w-auto px-5 py-2.5 rounded-xl font-semibold text-sm cursor-pointer ${isFavorite ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-red-800 text-white'}">${isFavorite ? '❤️ ในรายการโปรด' : '♡ เพิ่มลงรายการโปรด'}</button>
                 </div>
             </div>
             <div class="mt-5">
                 <h3 class="font-bold mb-3">สารบัญตอน</h3>
                 <div class="space-y-2.5">${visibleEpisodes.length === 0 ? '<p class="text-xs text-zinc-500">ยังไม่มีตอนที่เผยแพร่</p>' : visibleEpisodes.map(ep => `
-                    <div onclick="startReadingEpisode('${novel.id}', '${ep.id}')" class="flex items-center justify-between p-3.5 border border-zinc-800 rounded-xl hover:bg-zinc-800 cursor-pointer">
+                    <div onclick="startReadingEpisode('${escapeHtml(novel.id)}', '${escapeHtml(ep.id)}')" class="flex items-center justify-between p-3.5 border border-zinc-800 rounded-xl hover:bg-zinc-800 cursor-pointer">
                         <div>
                             <p class="font-semibold text-sm">${escapeHtml(ep.title)} ${ep.published === false ? '<span class="text-[10px] bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded ml-1">ซ่อนอยู่</span>' : ''}</p>
                             <p class="text-xs text-zinc-500">${ep.sceneCount !== undefined ? ep.sceneCount : (ep.scenes || []).length} ฉาก</p>
@@ -2427,16 +2469,16 @@
             </div>
             <div class="mt-8 pt-5 border-t border-zinc-800">
                 <h3 class="font-bold mb-3">💬 รีวิว</h3>
-                <form onsubmit="submitReview(event, '${novel.id}')" class="bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl mb-4 space-y-2.5">
-                    <select id="reviewRating_${novel.id}" class="border border-zinc-700 bg-zinc-900 text-white rounded px-2 py-1 text-xs"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select>
-                    <textarea id="reviewComment_${novel.id}" rows="2" required placeholder="เขียนรีวิว..." class="w-full px-3 py-2 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs"></textarea>
-                    <button type="submit" id="submitReviewBtn_${novel.id}" class="bg-red-800 hover:bg-red-900 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">ส่งรีวิว</button>
+                <form onsubmit="submitReview(event, '${escapeHtml(novel.id)}')" class="bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl mb-4 space-y-2.5">
+                    <select id="reviewRating_${escapeHtml(novel.id)}" class="border border-zinc-700 bg-zinc-900 text-white rounded px-2 py-1 text-xs"><option value="5">⭐⭐⭐⭐⭐</option><option value="4">⭐⭐⭐⭐</option><option value="3">⭐⭐⭐</option><option value="2">⭐⭐</option><option value="1">⭐</option></select>
+                    <textarea id="reviewComment_${escapeHtml(novel.id)}" rows="2" required placeholder="เขียนรีวิว..." class="w-full px-3 py-2 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs"></textarea>
+                    <button type="submit" id="submitReviewBtn_${escapeHtml(novel.id)}" class="bg-red-800 hover:bg-red-900 text-white text-xs px-4 py-2 rounded-lg font-medium cursor-pointer">ส่งรีวิว</button>
                 </form>
                 <div class="space-y-2.5">${allReviews.length === 0 ? '<p class="text-xs text-zinc-500">ยังไม่มีรีวิว</p>' : allReviews.map(r => `
                     <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 text-xs space-y-1">
-                        <div class="flex justify-between"><span class="font-bold">${escapeHtml(r.userName)} <span class="text-amber-500">${'⭐'.repeat(r.rating)}</span></span><span class="text-[10px] text-zinc-500">${r.time}</span></div>
+                        <div class="flex justify-between"><span class="font-bold">${escapeHtml(r.userName)} <span class="text-amber-500">${'⭐'.repeat(r.rating)}</span></span><span class="text-[10px] text-zinc-500">${escapeHtml(r.time)}</span></div>
                         <p class="text-zinc-300">${escapeHtml(r.comment)}</p>
-                        <div class="flex justify-end">${(currentUser && (currentUser.email === r.userEmail || currentUser.role === 'super_admin' || currentUser.role === 'admin')) ? `<button onclick="deleteReview('${r.id}', '${novel.id}')" class="text-red-400 font-medium cursor-pointer">ลบ</button>` : `<button onclick="reportReview('${r.id}')" class="text-zinc-500 cursor-pointer">🚨 แจ้ง</button>`}</div>
+                        <div class="flex justify-end">${(currentUser && (currentUser.email === r.userEmail || currentUser.role === 'super_admin' || currentUser.role === 'admin')) ? `<button onclick="deleteReview('${escapeHtml(r.id)}', '${escapeHtml(novel.id)}')" class="text-red-400 font-medium cursor-pointer">ลบ</button>` : `<button onclick="reportReview('${escapeHtml(r.id)}')" class="text-zinc-500 cursor-pointer">🚨 แจ้ง</button>`}</div>
                     </div>
                 `).join('')}</div>
             </div>
@@ -2557,6 +2599,7 @@
         if (activeNovelId) openNovelDetail(activeNovelId); else goHome(); 
     }
 
+    let sceneRenderTicket = 0;
     function renderCurrentScene() {
         recordReadingProgress();
         const scene = currentScenes[currentSceneIndex];
@@ -2565,13 +2608,16 @@
         const fallbackBg = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80';
         const rawBg = normalizeImageUrl(scene.bg);
         const sceneBgEl = document.getElementById('sceneBg');
+        const myTicket = ++sceneRenderTicket;
 
         if (rawBg) {
             const testImg = new Image();
             testImg.onload = () => {
+                if (myTicket !== sceneRenderTicket) return;
                 sceneBgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.75)), url("${rawBg}")`;
             };
             testImg.onerror = () => {
+                if (myTicket !== sceneRenderTicket) return;
                 console.warn("ไม่สามารถโหลดรูปจาก URL:", rawBg);
                 sceneBgEl.style.backgroundImage = `linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.75)), url("${fallbackBg}")`;
             };
@@ -2602,6 +2648,12 @@
             document.getElementById('choiceBox').classList.add('hidden');
             document.getElementById('nextBtnContainer').classList.remove('hidden');
         }
+    }
+
+    function handleSceneBgTap(e) {
+        const choiceBox = document.getElementById('choiceBox');
+        if (choiceBox && !choiceBox.classList.contains('hidden')) return;
+        nextScene();
     }
 
     function nextScene() {
@@ -2641,14 +2693,14 @@
         list.innerHTML = myNovels.length === 0 ? `<div class="theme-card bg-zinc-900 p-8 rounded-xl text-center text-zinc-500 border border-zinc-800">ยังไม่มีนิยายของคุณ</div>` : myNovels.map(novel => `
             <div class="theme-card bg-zinc-900 rounded-xl shadow-sm border border-zinc-800 p-4">
                 <div class="flex flex-col sm:flex-row justify-between gap-3 pb-3 border-b border-zinc-800">
-                    <div><span class="text-[11px] bg-red-950 text-red-400 px-2 py-0.5 rounded font-medium border border-red-900">${novel.category}</span><h3 class="font-bold text-lg inline ml-2">${escapeHtml(novel.title)}</h3></div>
+                    <div><span class="text-[11px] bg-red-950 text-red-400 px-2 py-0.5 rounded font-medium border border-red-900">${escapeHtml(novel.category)}</span><h3 class="font-bold text-lg inline ml-2">${escapeHtml(novel.title)}</h3></div>
                     <div class="flex flex-wrap gap-2 items-center">
-                        <button type="button" onclick="togglePublishNovel('${novel.id}')" class="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer ${novel.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-400'}">
+                        <button type="button" onclick="togglePublishNovel('${escapeHtml(novel.id)}')" class="text-xs px-3 py-1.5 rounded-lg font-semibold cursor-pointer ${novel.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-400'}">
                             ${novel.published !== false ? '🟢 เผยแพร่เรื่อง' : '🔴 ซ่อนเรื่อง'}
                         </button>
-                        <button type="button" onclick="openEpisodeEditor('${novel.id}', null)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer">+ ตอน</button>
-                        <button type="button" onclick="openEditNovelModal('${novel.id}')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer">แก้ไข</button>
-                        <button type="button" onclick="deleteNovel('${novel.id}')" class="bg-red-950 hover:bg-red-900 text-red-400 text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer border border-red-900">ลบ</button>
+                        <button type="button" onclick="openEpisodeEditor('${escapeHtml(novel.id)}', null)" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer">+ ตอน</button>
+                        <button type="button" onclick="openEditNovelModal('${escapeHtml(novel.id)}')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer">แก้ไข</button>
+                        <button type="button" onclick="deleteNovel('${escapeHtml(novel.id)}')" class="bg-red-950 hover:bg-red-900 text-red-400 text-xs px-3 py-1.5 rounded-lg font-medium cursor-pointer border border-red-900">ลบ</button>
                     </div>
                 </div>
                 <div class="mt-3 space-y-2">${(novel.episodes || []).map(ep => `
@@ -2658,12 +2710,12 @@
                             <span class="ml-2 text-xs text-zinc-500">(${ep.sceneCount !== undefined ? ep.sceneCount : (ep.scenes || []).length} ฉาก | ${ep.price > 0 ? ep.price + ' เหรียญ' : 'ฟรี'})</span>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                            <button type="button" onclick="togglePublishEpisode('${novel.id}', '${ep.id}')" class="text-xs px-3 py-1 rounded-lg font-semibold cursor-pointer ${ep.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-400'}">
+                            <button type="button" onclick="togglePublishEpisode('${escapeHtml(novel.id)}', '${escapeHtml(ep.id)}')" class="text-xs px-3 py-1 rounded-lg font-semibold cursor-pointer ${ep.published !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' : 'bg-zinc-800 text-zinc-400'}">
                                 ${ep.published !== false ? '🟢 เผยแพร่แล้ว' : '🔴 ซ่อนอยู่'}
                             </button>
                             <div class="flex gap-1.5">
-                                <button type="button" onclick="openEpisodeEditor('${novel.id}', '${ep.id}')" class="bg-red-800 hover:bg-red-900 text-white text-xs px-2.5 py-1 rounded cursor-pointer">แก้ไข</button>
-                                <button type="button" onclick="deleteEpisode('${novel.id}', '${ep.id}')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2.5 py-1 rounded cursor-pointer">ลบ</button>
+                                <button type="button" onclick="openEpisodeEditor('${escapeHtml(novel.id)}', '${escapeHtml(ep.id)}')" class="bg-red-800 hover:bg-red-900 text-white text-xs px-2.5 py-1 rounded cursor-pointer">แก้ไข</button>
+                                <button type="button" onclick="deleteEpisode('${escapeHtml(novel.id)}', '${escapeHtml(ep.id)}')" class="bg-red-600 hover:bg-red-700 text-white text-xs px-2.5 py-1 rounded cursor-pointer">ลบ</button>
                             </div>
                         </div>
                     </div>
@@ -2676,8 +2728,16 @@
         let novels = getNovels();
         let n = novels.find(item => item.id === novelId);
         if (!n) return;
-        n.published = n.published === false ? true : false;
-        if (await saveNovelsData(n)) { renderAdminNovels(); renderHomeNovels(); }
+        const nextPublished = n.published === false ? true : false;
+        if (window.togglePublishNovelCloud) {
+            if (await window.togglePublishNovelCloud(novelId, nextPublished)) {
+                renderAdminNovels();
+                renderHomeNovels();
+            }
+        } else {
+            n.published = nextPublished;
+            if (await saveNovelsData(n)) { renderAdminNovels(); renderHomeNovels(); }
+        }
     }
 
     async function togglePublishEpisode(novelId, epId) {
@@ -2751,15 +2811,22 @@
             const description = document.getElementById('novelDescInput').value;
             const published = document.getElementById('novelPublishedToggle').checked;
 
-            let targetNovel = null;
+            let savedOk = false;
             if (editId) {
-                targetNovel = novels.find(item => item.id === editId);
-                if (targetNovel) { targetNovel.title = title; targetNovel.category = category; targetNovel.cover = cover; targetNovel.description = description; targetNovel.published = published; }
+                if (window.updateNovelMetaCloud) {
+                    savedOk = await window.updateNovelMetaCloud(editId, { title, category, cover, description, published });
+                } else {
+                    const targetNovel = novels.find(item => item.id === editId);
+                    if (targetNovel) {
+                        Object.assign(targetNovel, { title, category, cover, description, published });
+                        savedOk = await saveNovelsData(targetNovel);
+                    }
+                }
             } else {
-                targetNovel = { id: "novel_" + Date.now(), title, category, author: currentUser ? currentUser.name : 'ผู้แต่ง', authorEmail: currentUser ? currentUser.email : '', cover, description, published, episodes: [] };
-                novels.push(targetNovel);
+                const newNovel = { id: "novel_" + Date.now(), title, category, author: currentUser ? currentUser.name : 'ผู้แต่ง', authorEmail: currentUser ? currentUser.email : '', cover, description, published, episodes: [] };
+                savedOk = await saveNovelsData(newNovel);
             }
-            if (await saveNovelsData(targetNovel)) {
+            if (savedOk) {
                 closeModal('novelFormModal');
                 openAdminStudio();
                 renderHomeNovels();
@@ -2930,7 +2997,7 @@
                                 <button type="button" onclick="openAssetPicker('scene', ${i})" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs px-2.5 py-1.5 rounded font-medium whitespace-nowrap cursor-pointer">📂 คลังรูป</button>
                             </div>
                             <div id="sceneBgPreview_${i}" class="${scene.bg ? '' : 'hidden'} mt-1">
-                                <img src="${scene.bg || ''}" class="w-16 h-10 object-cover rounded border border-zinc-700" id="sceneBgImg_${i}">
+                                <img src="${escapeHtml(scene.bg || '')}" class="w-16 h-10 object-cover rounded border border-zinc-700" id="sceneBgImg_${i}">
                             </div>
                         </div>
                     </div>
@@ -2956,12 +3023,27 @@
         }).join('');
     }
 
+    function remapChoiceIndicesAfterMove(fromIdx, toIdx) {
+        tempScenes.forEach(sc => {
+            if (!sc || !sc.hasChoice) return;
+            for (let c = 1; c <= 4; c++) {
+                const key = `choice${c}Next`;
+                if (sc[key] === undefined || sc[key] === '') continue;
+                const val = parseInt(sc[key], 10);
+                if (isNaN(val)) continue;
+                if (val === fromIdx) sc[key] = String(toIdx);
+                else if (val === toIdx) sc[key] = String(fromIdx);
+            }
+        });
+    }
+
     function moveScene(index, direction) {
         const targetIndex = index + direction;
         if (targetIndex < 0 || targetIndex >= tempScenes.length) return;
         const temp = tempScenes[index];
         tempScenes[index] = tempScenes[targetIndex];
         tempScenes[targetIndex] = temp;
+        remapChoiceIndicesAfterMove(index, targetIndex);
         renderSceneBlocks();
         triggerAutosave();
     }
@@ -2989,6 +3071,17 @@
     }
     function removeSceneBlock(i) { 
         tempScenes.splice(i, 1); 
+        tempScenes.forEach(sc => {
+            if (!sc || !sc.hasChoice) return;
+            for (let c = 1; c <= 4; c++) {
+                const key = `choice${c}Next`;
+                if (sc[key] === undefined || sc[key] === '') continue;
+                const val = parseInt(sc[key], 10);
+                if (isNaN(val)) continue;
+                if (val === i) sc[key] = '0';
+                else if (val > i) sc[key] = String(val - 1);
+            }
+        });
         renderSceneBlocks(); 
         triggerAutosave();
     }
@@ -3024,7 +3117,6 @@
             if (!n) { alert("ไม่พบข้อมูลเรื่องนิยาย"); return; }
             if (!n.episodes) n.episodes = [];
 
-            // แปลงรูปฉากที่ยังเป็น Base64 ให้ขึ้น Firebase Storage เป็น URL ก่อนบันทึก
             for (let i = 0; i < tempScenes.length; i++) {
                 if (tempScenes[i].bg && tempScenes[i].bg.startsWith('data:image/')) {
                     tempScenes[i].bg = await resolveImageToStorageUrl(tempScenes[i].bg, 'novel_scenes');
@@ -3055,7 +3147,8 @@
                 if (isNewEpisode) {
                     await triggerNovelUpdateNotification(n.id, n.title, title, targetEpId);
                 }
-                if (currentEditingKey) localStorage.removeItem(currentEditingKey);
+                clearTimeout(draftSaveTimer);
+                if (currentEditingKey) { localStorage.removeItem(currentEditingKey); currentEditingKey = null; }
                 closeModal('episodeEditorModal');
                 openAdminStudio();
                 alert("บันทึกตอนเรียบร้อย!");
@@ -3081,6 +3174,7 @@
 
     function hideAllViews() {
         if (typeof playSceneBgm === 'function') playSceneBgm('');
+        if (typeof window.unsubscribeAllChatsCloud === 'function') window.unsubscribeAllChatsCloud();
         ['homeView', 'novelDetailView', 'readerView', 'adminStudioView', 'writerDashboardView', 'superAdminView', 'supportInboxView', 'favoritesView', 'readingHistoryView'].forEach(id => document.getElementById(id).classList.add('hidden'));
     }
 
@@ -3110,6 +3204,13 @@
                 toggleSidebar();
             });
         }
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('notifBellWrapper');
+            const dropdown = document.getElementById('notifDropdown');
+            if (wrapper && dropdown && !dropdown.classList.contains('hidden') && !wrapper.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
     });
 
     function toggleSearch() { document.getElementById('searchBar').classList.toggle('hidden'); }
@@ -3264,8 +3365,12 @@
         if (unsubscribeUserChat) { unsubscribeUserChat(); unsubscribeUserChat = null; }
     };
 
-    window.subscribeAllChatsCloud = function() {
+    window.unsubscribeAllChatsCloud = function() {
         if (unsubscribeAdminChats) { unsubscribeAdminChats(); unsubscribeAdminChats = null; }
+    };
+
+    window.subscribeAllChatsCloud = function() {
+        window.unsubscribeAllChatsCloud();
         unsubscribeAdminChats = onSnapshot(collection(window.db, "chats"), (snapshot) => {
             const allChats = {};
             snapshot.forEach((docSnap) => {
@@ -3447,7 +3552,6 @@
             if (typeof rememberAccount === 'function') rememberAccount(currentUserProfile);
             if (window.subscribeNotificationsCloud) window.subscribeNotificationsCloud(firebaseUser.email);
 
-            // ฟังการเปลี่ยนแปลงยอดเหรียญ สิทธิ์ รายการโปรด และประวัติการอ่านแบบ Real-time ข้ามอุปกรณ์
             unsubscribeUserSnapshot = onSnapshot(userDocRef, (snap) => {
                 if (snap.exists()) {
                     currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, ...snap.data() };
@@ -3468,7 +3572,6 @@
         }
         await fetchSiteLogoFromCloud();
         if (typeof updateUIByAuth === 'function') updateUIByAuth();
-        if (typeof goHome === 'function') goHome();
     });
 
     window.handleRegister = async function(e) {
@@ -3541,9 +3644,12 @@
 
     window.handleLogoutCloud = async function() {
         try {
+            if (typeof window.unsubscribeUserChatCloud === 'function') window.unsubscribeUserChatCloud();
+            if (typeof window.unsubscribeAllChatsCloud === 'function') window.unsubscribeAllChatsCloud();
+            if (typeof window.unsubscribeNotificationsCloud === 'function') window.unsubscribeNotificationsCloud();
             await signOut(window.auth);
             currentUserProfile = null;
-            localStorage.removeItem('mynovel_currentUser');
+            ['mynovel_currentUser', 'mynovel_topups', 'mynovel_chats', 'mynovel_unlocks', 'mynovel_withdrawals'].forEach(k => localStorage.removeItem(k));
             alert("ออกจากระบบแล้ว");
             updateUIByAuth();
             goHome();
@@ -3656,7 +3762,6 @@
 
     window.triggerNovelUpdateNotificationCloud = async function(novelId, novelTitle, episodeTitle, episodeId) {
         try {
-            // ดึงรายชื่อผู้ใช้ทุกคนที่กดหัวใจ (favorites) นิยายเรื่องนี้จาก Firestore
             const q = query(collection(window.db, "users"), where("favorites", "array-contains", novelId));
             const usersSnap = await getDocs(q);
             if (usersSnap.empty) return;
@@ -3725,6 +3830,10 @@
             if (adminStudioEl && !adminStudioEl.classList.contains('hidden') && typeof renderAdminNovels === 'function') {
                 renderAdminNovels();
             }
+            const detailEl = document.getElementById('novelDetailView');
+            if (detailEl && !detailEl.classList.contains('hidden') && activeNovelId && typeof openNovelDetail === 'function') {
+                openNovelDetail(activeNovelId, true);
+            }
         }, (error) => {
             console.error("Realtime novels listener error:", error);
         });
@@ -3755,7 +3864,6 @@
             if (epSnap.exists()) {
                 return { id: epSnap.id, ...epSnap.data() };
             }
-            // Fallback สำหรับนิยายเก่าที่ยังไม่เคยย้ายตอนเข้า subcollection
             const novel = novelsCache.find(n => n.id === novelId);
             const legacyEp = (novel?.episodes || []).find(e => e.id === epId);
             return legacyEp || null;
@@ -3774,7 +3882,6 @@
                 novel.id = docRef.id;
             }
 
-            // อัปโหลดรูปฉาก Base64 ที่ตกค้างขึ้น Storage (ถ้ามี)
             const cleanScenes = [];
             for (const sc of (episodePayload.scenes || [])) {
                 let bgUrl = sc.bg || '';
@@ -3796,10 +3903,8 @@
                 updatedAt: Date.now()
             };
 
-            // 1. บันทึกเนื้อหาตอน (พร้อมฉาก) ลง Subcollection `novels/{novelId}/episodes/{epId}`
             await setDoc(doc(window.db, "novels", novel.id, "episodes", episodePayload.id), fullEpisodeDoc, { merge: true });
 
-            // 2. อัปเดตรายการสารบัญในเรื่องหลัก (เก็บเฉพาะ metadata ไม่เก็บ scenes ก้อนใหญ่ และ migrate ตอนเก่าถ้ามี)
             const existingEpisodes = Array.isArray(novel.episodes) ? [...novel.episodes] : [];
             const epSummaries = [];
             let found = false;
@@ -3815,7 +3920,6 @@
                         sceneCount: cleanScenes.length
                     });
                 } else {
-                    // ถ้าตอนเก่ามี scenes ฝังอยู่ในเรื่องหลัก ให้ย้ายไป subcollection ด้วยเพื่อให้เรื่องหลักเบาลงทันที
                     if (Array.isArray(item.scenes) && item.scenes.length > 0) {
                         const migratedScenes = [];
                         for (const oldSc of item.scenes) {
@@ -3873,7 +3977,6 @@
 
             await setDoc(doc(window.db, "novels", novel.id), novelMetaPayload, { merge: true });
 
-            // อัปเดตแคชในเครื่องให้เก็บ scenes ของตอนนี้ไว้พร้อมใช้ทันที
             const localIdx = novelsCache.findIndex(n => n.id === novel.id);
             const cachedEpisodes = epSummaries.map(s => s.id === fullEpisodeDoc.id ? fullEpisodeDoc : s);
             if (localIdx >= 0) {
@@ -3883,6 +3986,28 @@
             return true;
         } catch (error) {
             alert("เกิดข้อผิดพลาดในการบันทึกตอนลงคลาวด์: " + error.message);
+            return false;
+        }
+    };
+
+    window.updateNovelMetaCloud = async function(novelId, metaFields) {
+        try {
+            await updateDoc(doc(window.db, "novels", novelId), { ...metaFields, updatedAt: Date.now() });
+            await fetchNovelsFromFirestore();
+            return true;
+        } catch (error) {
+            alert("แก้ไขข้อมูลเรื่องไม่สำเร็จ: " + error.message);
+            return false;
+        }
+    };
+
+    window.togglePublishNovelCloud = async function(novelId, published) {
+        try {
+            await updateDoc(doc(window.db, "novels", novelId), { published: Boolean(published), updatedAt: Date.now() });
+            await fetchNovelsFromFirestore();
+            return true;
+        } catch (error) {
+            alert("อัปเดตสถานะเรื่องไม่สำเร็จ: " + error.message);
             return false;
         }
     };
@@ -3953,7 +4078,6 @@
                     const uploadedCover = await window.uploadImageToFirebaseStorage(coverUrl, 'novel_covers');
                     if (uploadedCover) coverUrl = uploadedCover;
                 }
-                // แยก scenes ออกไปเก็บใน subcollection เสมอเพื่อไม่ให้เอกสารหลักเกิน 1 MB
                 const epSummaries = [];
                 for (const ep of (novel.episodes || [])) {
                     if (Array.isArray(ep.scenes) && ep.scenes.length > 0) {
@@ -4004,7 +4128,6 @@
 
     window.deleteNovelCloud = async function(novelId) {
         try {
-            // ลบตอนย่อยทั้งหมดใน subcollection ก่อนลบเรื่องหลัก
             const epsSnap = await getDocs(collection(window.db, "novels", novelId, "episodes"));
             for (const epDoc of epsSnap.docs) {
                 await deleteDoc(epDoc.ref).catch(() => {});
@@ -4047,91 +4170,82 @@
                 return false;
             }
 
-            const usersSnapshot = await getDocs(collection(window.db, "users"));
             let targetDocId = null;
-            usersSnapshot.forEach((docSnap) => {
-                if (String(docSnap.data().email || '').trim().toLowerCase() === targetEmail) {
-                    targetDocId = docSnap.id;
+            const exactQ = query(collection(window.db, "users"), where("email", "==", targetEmail));
+            const exactSnap = await getDocs(exactQ);
+            if (!exactSnap.empty) {
+                targetDocId = exactSnap.docs[0].id;
+            } else {
+                const origQ = query(collection(window.db, "users"), where("email", "==", String(email || '').trim()));
+                const origSnap = await getDocs(origQ);
+                if (!origSnap.empty) {
+                    targetDocId = origSnap.docs[0].id;
+                } else {
+                    const allUsersSnap = await getDocs(collection(window.db, "users"));
+                    allUsersSnap.forEach((docSnap) => {
+                        const d = docSnap.data();
+                        if (!targetDocId && d.email && String(d.email).trim().toLowerCase() === targetEmail) {
+                            targetDocId = docSnap.id;
+                        }
+                    });
                 }
-            });
+            }
 
             if (!targetDocId) {
-                alert(`⚠️ ไม่พบบัญชีผู้ใช้ที่ใช้อีเมล "${email}" ในฐานข้อมูลคลาวด์ (เหรียญจึงยังไม่ถูกอัปเดต)`);
+                alert(`ไม่พบบัญชีผู้ใช้ที่มีอีเมล "${targetEmail}" ในระบบ`);
                 return false;
             }
 
-            const targetRef = doc(window.db, "users", targetDocId);
-            const finalCoins = await runTransaction(window.db, async (transaction) => {
-                const freshSnap = await transaction.get(targetRef);
-                if (!freshSnap.exists()) throw new Error("ไม่พบเอกสารผู้ใช้ในระบบ");
-                const currentCoins = Number(freshSnap.data().coins || 0);
-                // อนุญาตให้ยอดเหรียญติดลบได้ (เช่น กรณีเติมผิดแล้วดึงคืนหลังจากลูกค้าใช้เหรียญไปแล้ว)
-                const newCoins = currentCoins + delta;
-                if (!Number.isSafeInteger(newCoins)) {
-                    throw new Error("จำนวนเหรียญเกินขอบเขตที่ระบบรองรับ");
+            const userRef = doc(window.db, "users", targetDocId);
+            const newCoins = await runTransaction(window.db, async (transaction) => {
+                const userSnap = await transaction.get(userRef);
+                if (!userSnap.exists()) {
+                    throw new Error("ไม่พบข้อมูลบัญชีผู้ใช้");
                 }
-                transaction.update(targetRef, { coins: newCoins });
-                return newCoins;
+                const currentCoins = Number(userSnap.data().coins || 0);
+                const updatedCoins = currentCoins + delta;
+                transaction.update(userRef, { coins: updatedCoins });
+                return updatedCoins;
             });
 
             if (currentUserProfile && String(currentUserProfile.email || '').trim().toLowerCase() === targetEmail) {
-                currentUserProfile.coins = finalCoins;
+                currentUserProfile.coins = newCoins;
                 localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
                 updateUIByAuth();
             }
-            return { success: true, newCoins: finalCoins };
+            return { success: true, newCoins };
         } catch (error) {
-            console.error("Error updating user coins:", error);
-            alert("❌ อัปเดตเหรียญลงฐานข้อมูลไม่สำเร็จ: " + (error.message || error));
+            alert("เกิดข้อผิดพลาดในการอัปเดตเหรียญ: " + (error.message || error));
             return false;
-        }
-    };
-
-    // ค้นหาบัญชีผู้ใช้จริงจาก Firestore สำหรับการเติมเหรียญโดยแอดมินสูงสุด
-    window.searchCustomersForDirectTopup = async function(searchTerm) {
-        const container = document.getElementById('directTopupCustomerResults');
-        if (!container) return;
-        try {
-            const usersSnapshot = await getDocs(collection(window.db, "users"));
-            const term = String(searchTerm || '').toLowerCase().trim();
-            const matches = [];
-            usersSnapshot.forEach((userDoc) => {
-                const user = userDoc.data();
-                const email = String(user.email || '').toLowerCase();
-                const name = String(user.name || '').toLowerCase();
-                if (term && (email.includes(term) || name.includes(term))) {
-                    matches.push({
-                        email: user.email || '',
-                        name: user.name || 'ไม่ระบุชื่อ',
-                        coins: Number(user.coins || 0)
-                    });
-                }
-            });
-            if (!matches.length) {
-                container.innerHTML = `<p class="text-xs text-zinc-500 text-center py-3">ไม่พบบัญชีลูกค้าที่ตรงกับคำค้นหา</p>`;
-                return;
-            }
-            container.innerHTML = matches.slice(0, 30).map(user => `
-                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                    <div>
-                        <p class="font-bold text-zinc-100">${escapeHtml(user.name)} <span class="text-zinc-400 font-normal">(${escapeHtml(user.email)})</span></p>
-                        <p class="${user.coins < 0 ? 'text-red-400 font-bold' : 'text-amber-400'} mt-1">ยอดปัจจุบัน: ${user.coins.toLocaleString('th-TH')} เหรียญ</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="directCoins_${encodeURIComponent(user.email)}" min="1" step="1" placeholder="จำนวนเหรียญ" class="w-28 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs">
-                        <button onclick="addDirectTopupCoins('${String(user.email).replace(/\\/g, '\\\\\\\\').replace(/'/g, "\\\\'")}', false)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">เติมเหรียญ</button>
-                        <button onclick="addDirectTopupCoins('${String(user.email).replace(/\\/g, '\\\\\\\\').replace(/'/g, "\\\\'")}', true)" class="bg-red-700 hover:bg-red-800 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer" title="ดึงเหรียญกลับ (ยอดติดลบได้)">ดึงกลับ</button>
-                    </div>
-                </div>
-            `).join('') + (matches.length > 30 ? `<p class="text-[11px] text-zinc-500 text-center">พบ ${matches.length} บัญชี แสดง 30 รายการแรก กรุณาพิมพ์คำค้นหาให้เจาะจงขึ้น</p>` : '');
-        } catch (error) {
-            console.error("Customer search failed:", error);
-            container.innerHTML = `<p class="text-xs text-red-400 text-center py-3">ค้นหาบัญชีไม่สำเร็จ: ${escapeHtml(error.message || error)}</p>`;
         }
     };
 
     window.addCoinsToCustomerCloud = async function(email, amount) {
         return await window.updateUserCoinsCloud(email, amount);
+    };
+
+    window.getUserInfoByEmailCloud = async function(email) {
+        try {
+            const targetEmail = String(email || '').trim().toLowerCase();
+            if (!targetEmail) return null;
+            const exactQ = query(collection(window.db, "users"), where("email", "==", targetEmail));
+            const exactSnap = await getDocs(exactQ);
+            if (!exactSnap.empty) {
+                return { uid: exactSnap.docs[0].id, ...exactSnap.docs[0].data() };
+            }
+            const allUsersSnap = await getDocs(collection(window.db, "users"));
+            let found = null;
+            allUsersSnap.forEach((docSnap) => {
+                const d = docSnap.data();
+                if (!found && d.email && String(d.email).trim().toLowerCase() === targetEmail) {
+                    found = { uid: docSnap.id, ...d };
+                }
+            });
+            return found;
+        } catch (e) {
+            console.error("Error fetching user by email:", e);
+            return null;
+        }
     };
 
     window.fetchWithdrawalsFromFirestore = async function() {
@@ -4150,160 +4264,179 @@
         }
     };
 
-    window.getUserInfoByEmailCloud = async function(email) {
+    window.processAuthorWithdrawalCloud = async function(authorEmail, amountBaht, adminEmail) {
         try {
-            const targetEmail = String(email || '').trim().toLowerCase();
-            if (!targetEmail) return null;
-            const usersSnapshot = await getDocs(collection(window.db, "users"));
-            let found = null;
-            usersSnapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                if (String(data.email || '').trim().toLowerCase() === targetEmail) {
-                    found = { uid: docSnap.id, ...data };
+            const cleanAuthorEmail = String(authorEmail || '').trim().toLowerCase();
+            const withdrawSatang = Math.round(Number(amountBaht) * 100);
+            if (!cleanAuthorEmail || withdrawSatang <= 0) {
+                alert("ข้อมูลอีเมลหรือยอดเงินไม่ถูกต้อง");
+                return false;
+            }
+
+            const [novelsSnap, unlocksSnap, withdrawalsSnap] = await Promise.all([
+                getDocs(collection(window.db, "novels")),
+                getDocs(collection(window.db, "unlocks")),
+                getDocs(collection(window.db, "withdrawals"))
+            ]);
+
+            const authorNovelIds = new Set();
+            novelsSnap.forEach((d) => {
+                const data = d.data();
+                if ((data.authorEmail || '').toLowerCase().trim() === cleanAuthorEmail) {
+                    authorNovelIds.add(d.id);
                 }
             });
-            return found;
-        } catch (error) {
-            console.error("Error getting user info:", error);
-            return null;
-        }
-    };
 
-    window.processAuthorWithdrawalCloud = async function(email, amountBaht, adminEmail = '') {
-        try {
-            const targetEmail = String(email || '').trim().toLowerCase();
-            const cleanAmount = Math.round(Number(amountBaht) * 100) / 100;
-            if (!targetEmail || !Number.isFinite(cleanAmount) || cleanAmount <= 0) {
-                alert("ข้อมูลการเบิกเงินไม่ถูกต้อง");
+            let totalCoins = 0;
+            unlocksSnap.forEach((d) => {
+                const u = d.data();
+                if ((u.authorEmail || '').toLowerCase().trim() === cleanAuthorEmail || authorNovelIds.has(u.novelId)) {
+                    totalCoins += Math.max(0, Number(u.price) || 0);
+                }
+            });
+
+            let alreadyWithdrawnSatang = 0;
+            withdrawalsSnap.forEach((d) => {
+                const w = d.data();
+                if ((w.authorEmail || '').toLowerCase().trim() === cleanAuthorEmail) {
+                    alreadyWithdrawnSatang += Math.round(Math.max(0, Number(w.amountBaht) || 0) * 100);
+                }
+            });
+
+            const gross80Satang = Math.floor(totalCoins * 80);
+            const availableSatang = Math.max(0, gross80Satang - alreadyWithdrawnSatang);
+
+            if (withdrawSatang > availableSatang) {
+                alert(`⛔ ปฏิเสธรายการ: ยอดเงินเบิก (${(withdrawSatang/100).toFixed(2)} บาท) เกินกว่ายอดสุทธิที่เบิกได้จริงบนคลาวด์ (${(availableSatang/100).toFixed(2)} บาท)`);
                 return false;
             }
 
-            // ดึงข้อมูลล่าสุดจาก Firestore เพื่อตรวจสอบซ้ำระดับฐานข้อมูลก่อนบันทึกเบิก
-            await window.fetchNovelsFromFirestore();
-            await window.fetchUnlocksFromFirestore();
-            await window.fetchWithdrawalsFromFirestore();
-
-            const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
-            const freshStats = calculateAuthorFinancials(targetEmail, currentUser);
-            const availSatang = Math.round(freshStats.availableBaht * 100);
-            const reqSatang = Math.round(cleanAmount * 100);
-
-            if (reqSatang > availSatang) {
-                alert(`⛔ ปฏิเสธการทำรายการ: ยอดเบิก (${cleanAmount.toFixed(2)} บาท) เกินยอดคงเหลือล่าสุด (${freshStats.availableBaht.toFixed(2)} บาท)`);
-                return false;
-            }
-
-            const wdRef = doc(collection(window.db, "withdrawals"));
-            const newRecord = {
-                id: wdRef.id,
-                authorEmail: targetEmail,
-                amountBaht: cleanAmount,
-                adminEmail: adminEmail || (currentUser?.email || ''),
+            const wdId = "WD" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+            const payload = {
+                id: wdId,
+                authorEmail: cleanAuthorEmail,
+                amountBaht: withdrawSatang / 100,
+                adminEmail: String(adminEmail || '').toLowerCase().trim(),
                 timestamp: Date.now(),
-                time: new Date().toLocaleString('th-TH')
+                time: new Date().toLocaleString('th-TH'),
+                status: 'completed'
             };
-            await setDoc(wdRef, newRecord);
 
-            let withdrawals = JSON.parse(localStorage.getItem('mynovel_withdrawals')) || [];
-            withdrawals.unshift(newRecord);
-            localStorage.setItem('mynovel_withdrawals', JSON.stringify(withdrawals));
+            await setDoc(doc(window.db, "withdrawals", wdId), payload);
+            await window.fetchWithdrawalsFromFirestore();
             return true;
         } catch (error) {
-            console.error("Error withdrawal:", error);
-            alert("❌ บันทึกการเบิกเงินลงคลาวด์ไม่สำเร็จ: " + (error.message || error));
+            alert("เกิดข้อผิดพลาดในการบันทึกการเบิกเงิน: " + (error.message || error));
             return false;
         }
     };
 
-    window.requestAuthorCloud = async function(email, cost) {
+    window.searchCustomersForDirectTopup = async function(searchQuery) {
+        const container = document.getElementById('directTopupCustomerResults');
+        if (!container) return;
         try {
-            const user = window.auth.currentUser;
-            if (!user) return;
-            const userRef = doc(window.db, "users", user.uid);
-            const newCoins = await runTransaction(window.db, async (transaction) => {
-                const userSnap = await transaction.get(userRef);
-                if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
-                const userData = userSnap.data();
-                const currentCoins = Number(userData.coins || 0);
-                if (currentCoins < cost) throw new Error("เหรียญในระบบคลาวด์ของคุณไม่พอ");
-                const updatedCoins = currentCoins - cost;
-                transaction.update(userRef, { coins: updatedCoins, role: "pending_author" });
-                return updatedCoins;
+            const q = String(searchQuery || '').toLowerCase().trim();
+            const usersSnap = await getDocs(collection(window.db, "users"));
+            const matched = [];
+            usersSnap.forEach((docSnap) => {
+                const u = docSnap.data();
+                const email = String(u.email || '').toLowerCase();
+                const name = String(u.name || '').toLowerCase();
+                if (email.includes(q) || name.includes(q)) {
+                    matched.push({ uid: docSnap.id, ...u });
+                }
             });
 
-            currentUserProfile.coins = newCoins;
-            currentUserProfile.role = "pending_author";
-            localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
-            updateUIByAuth();
-            alert("ส่งคำขอสมัครเป็นนักเขียนเรียบร้อยแล้ว (หัก " + cost + " เหรียญ)");
-        } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
+            if (matched.length === 0) {
+                container.innerHTML = `<div class="bg-zinc-950 p-3 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบบัญชีลูกค้าที่ตรงกับ "${escapeHtml(searchQuery)}"</div>`;
+                return;
+            }
+
+            container.innerHTML = matched.slice(0, 10).map(u => {
+                const safeEmailId = encodeURIComponent(u.email || '');
+                const coinCount = Number(u.coins || 0);
+                return `
+                    <div class="bg-zinc-950 p-3.5 rounded-xl border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                        <div>
+                            <p class="font-bold text-sm text-white">${escapeHtml(u.name || u.email)} <span class="text-xs font-normal text-zinc-400">(${escapeHtml(u.email)})</span></p>
+                            <p class="text-amber-400 font-semibold mt-0.5">🪙 ยอดเหรียญคงเหลือปัจจุบัน: ${coinCount} เหรียญ</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                            <input type="number" id="directCoins_${safeEmailId}" min="1" placeholder="จำนวนเหรียญ" class="w-28 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs">
+                            <button type="button" data-email="${escapeHtml(u.email)}" onclick="addDirectTopupCoins(this.getAttribute('data-email'), false)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg font-bold cursor-pointer whitespace-nowrap">+ เติมเหรียญ</button>
+                            <button type="button" data-email="${escapeHtml(u.email)}" onclick="addDirectTopupCoins(this.getAttribute('data-email'), true)" class="bg-red-700 hover:bg-red-800 text-white px-2.5 py-1.5 rounded-lg font-bold cursor-pointer whitespace-nowrap">- ดึงเหรียญกลับ</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (e) {
+            container.innerHTML = `<p class="text-xs text-red-400 text-center">ค้นหาบัญชีไม่สำเร็จ: ${escapeHtml(e.message || e)}</p>`;
+        }
     };
 
     window.unlockEpisodeCloud = async function(novel, episode) {
         try {
             const user = window.auth.currentUser;
-            if (!user) {
-                alert("กรุณาเข้าสู่ระบบก่อนปลดล็อกตอน");
-                return false;
-            }
-            const epPrice = Math.max(0, Number(episode.price) || 0);
-            const userRef = doc(window.db, "users", user.uid);
+            if (!user) { alert("กรุณาเข้าสู่ระบบก่อน"); return false; }
 
-            // ใช้ runTransaction เพื่อป้องกันการกดซื้อซ้ำหรือตัดเหรียญซ้ำซ้อน 100%
+            const epPrice = Math.max(0, Number(episode.price) || 0);
+            if (epPrice <= 0) {
+                startReadingEpisode(novel.id, episode.id, 0, true);
+                return true;
+            }
+
+            const userRef = doc(window.db, "users", user.uid);
+            const unlockDocId = `${user.uid}_${novel.id}_${episode.id}`;
+            const unlockRef = doc(window.db, "unlocks", unlockDocId);
+
             const txResult = await runTransaction(window.db, async (transaction) => {
                 const userSnap = await transaction.get(userRef);
-                if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลบัญชีผู้ใช้ในระบบ");
+                if (!userSnap.exists()) throw new Error("ไม่พบข้อมูลบัญชีผู้ใช้");
 
-                const userData = userSnap.data();
-                const currentCoins = Number(userData.coins || 0);
-                const unlockedEpisodes = Array.isArray(userData.unlockedEpisodes) ? [...userData.unlockedEpisodes] : [];
+                const uData = userSnap.data();
+                const currentCoins = Number(uData.coins || 0);
+                const unlockedList = Array.isArray(uData.unlockedEpisodes) ? [...uData.unlockedEpisodes] : [];
 
-                if (unlockedEpisodes.includes(episode.id)) {
-                    return { alreadyUnlocked: true, newCoins: currentCoins, unlockedEpisodes };
+                if (unlockedList.includes(episode.id)) {
+                    return { alreadyUnlocked: true, newCoins: currentCoins, unlockedEpisodes: unlockedList };
                 }
 
                 if (currentCoins < epPrice) {
-                    throw new Error(`เหรียญไม่พอสำหรับปลดล็อกตอนนี้ (ต้องการ ${epPrice} เหรียญ, คงเหลือ ${currentCoins} เหรียญ)`);
+                    throw new Error(`เหรียญไม่พอ (ต้องการ ${epPrice} เหรียญ, คุณมี ${currentCoins} เหรียญ)`);
                 }
 
-                const newCoins = currentCoins - epPrice;
-                unlockedEpisodes.push(episode.id);
+                const updatedCoins = currentCoins - epPrice;
+                unlockedList.push(episode.id);
 
                 transaction.update(userRef, {
-                    coins: newCoins,
-                    unlockedEpisodes: unlockedEpisodes
+                    coins: updatedCoins,
+                    unlockedEpisodes: unlockedList
                 });
 
-                // สร้างบันทึกการปลดล็อกแบบผูก ID เฉพาะ (uid_episodeId) ใน Transaction เดียวกัน ป้องกันรายได้ซ้ำ
-                const deterministicUnlockId = `${user.uid}_${episode.id}`;
-                const unlockRef = doc(window.db, "unlocks", deterministicUnlockId);
                 transaction.set(unlockRef, {
-                    id: deterministicUnlockId,
-                    novelId: novel.id,
-                    novelTitle: novel.title,
-                    episodeId: episode.id,
-                    episodeTitle: episode.title,
-                    price: epPrice,
+                    id: unlockDocId,
                     readerUid: user.uid,
-                    readerEmail: user.email,
+                    readerEmail: uData.email || user.email || '',
+                    novelId: novel.id,
+                    novelTitle: novel.title || '',
                     authorEmail: novel.authorEmail || '',
+                    episodeId: episode.id,
+                    episodeTitle: episode.title || '',
+                    price: epPrice,
                     timestamp: Date.now(),
                     time: new Date().toLocaleString('th-TH')
-                }, { merge: true });
+                });
 
-                return { alreadyUnlocked: false, newCoins, unlockedEpisodes };
+                return { alreadyUnlocked: false, newCoins: updatedCoins, unlockedEpisodes: unlockedList };
             });
 
             if (currentUserProfile) {
                 currentUserProfile.coins = txResult.newCoins;
                 currentUserProfile.unlockedEpisodes = txResult.unlockedEpisodes;
                 localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
-                if (typeof updateUIByAuth === 'function') updateUIByAuth();
             }
-
-            if (!txResult.alreadyUnlocked) {
-                alert(`ปลดล็อกตอน "${episode.title}" สำเร็จ! (หัก ${epPrice} เหรียญ, คงเหลือ ${txResult.newCoins} เหรียญ)`);
-            }
+            updateUIByAuth();
+            await window.fetchUnlocksFromFirestore();
             startReadingEpisode(novel.id, episode.id, 0, true);
             return true;
         } catch (error) {
@@ -4312,235 +4445,157 @@
         }
     };
 
-    window.getPendingAuthorsCloud = async function() {
+    window.requestAuthorCloud = async function(email, fee) {
         try {
-            const usersRef = collection(window.db, "users");
-            const q = query(usersRef, where("role", "==", "pending_author"));
-            const querySnapshot = await getDocs(q);
-            let container = document.getElementById('pendingAuthorList');
-            if (!container) return;
+            const user = window.auth.currentUser;
+            if (!user) return;
+            const userRef = doc(window.db, "users", user.uid);
+            const newCoins = await runTransaction(window.db, async (transaction) => {
+                const snap = await transaction.get(userRef);
+                if (!snap.exists()) throw new Error("ไม่พบข้อมูลผู้ใช้");
+                const data = snap.data();
+                if (data.role !== 'customer') throw new Error("สถานะบัญชีของคุณไม่สามารถส่งคำขอได้");
+                const currentCoins = Number(data.coins || 0);
+                if (currentCoins < fee) throw new Error("เหรียญไม่พอ");
+                const updated = currentCoins - fee;
+                transaction.update(userRef, {
+                    coins: updated,
+                    role: 'pending_author',
+                    authorRequestedAt: new Date().toISOString()
+                });
+                return updated;
+            });
+            currentUserProfile.coins = newCoins;
+            currentUserProfile.role = 'pending_author';
+            localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+            updateUIByAuth();
+            alert("ส่งคำขอเป็นนักเขียนสำเร็จ! ระบบหักเหรียญ 349 เหรียญแล้ว กรุณารอแอดมินตรวจสอบ");
+        } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
+    };
 
-            let searchQuery = (document.getElementById('searchDirectAuthorInput')?.value || '').toLowerCase().trim();
-            let html = '';
-            querySnapshot.forEach((docSnap) => {
-                let u = docSnap.data();
-                if (searchQuery && !u.email.toLowerCase().trim().includes(searchQuery) && !(u.name && u.name.toLowerCase().trim().includes(searchQuery))) return;
-                html += `
-                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
-                        <div>
-                            <p class="font-bold text-sm">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
-                            <p class="text-zinc-400">เบอร์โทร: ${escapeHtml(u.phone || '-')}</p>
-                        </div>
+    window.getPendingAuthorsCloud = async function() {
+        const list = document.getElementById('pendingAuthorList');
+        const searchQuery = (document.getElementById('searchDirectAuthorInput')?.value || '').toLowerCase().trim();
+        list.innerHTML = `<p class="text-xs text-zinc-500 text-center py-4">กำลังโหลดข้อมูลคำขอ...</p>`;
+        try {
+            const q = query(collection(window.db, "users"), where("role", "==", "pending_author"));
+            const snap = await getDocs(q);
+            list.innerHTML = "";
+            let foundCount = 0;
+
+            snap.forEach((docSnap) => {
+                const u = docSnap.data();
+                if (searchQuery && !(u.email && u.email.toLowerCase().includes(searchQuery)) && !(u.name && u.name.toLowerCase().includes(searchQuery))) {
+                    return;
+                }
+                foundCount++;
+                list.innerHTML += `
+                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center justify-between text-xs shadow-sm">
+                        <div><p class="font-bold text-sm">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p><p class="text-zinc-500 mt-0.5">เบอร์โทร: ${escapeHtml(u.phone || '-')}</p></div>
                         <div class="flex gap-2">
-                            <button onclick="approveAuthor('${u.email}', true)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold cursor-pointer">อนุมัติเป็นนักเขียน</button>
-                            <button onclick="approveAuthor('${u.email}', false)" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold cursor-pointer">ปฏิเสธ</button>
+                            <button type="button" data-email="${escapeHtml(u.email)}" onclick="approveAuthor(this.getAttribute('data-email'), true)" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">อนุมัติ</button>
+                            <button type="button" data-email="${escapeHtml(u.email)}" onclick="approveAuthor(this.getAttribute('data-email'), false)" class="bg-red-500 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">ปฏิเสธ (คืน 349 เหรียญ)</button>
                         </div>
                     </div>
                 `;
             });
-            container.innerHTML = html || `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบคำขอเป็นนักเขียนที่ค้นหา</div>`;
-        } catch (error) { console.error("Error pending authors:", error); }
+            if (foundCount === 0) list.innerHTML = `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ไม่พบคำขอเป็นนักเขียน</div>`;
+        } catch (error) { console.error(error); }
     };
 
     window.updateAuthorRoleCloud = async function(email, newRole) {
         try {
-            const usersRef = collection(window.db, "users");
-            const q = query(usersRef, where("email", "==", email));
-            const querySnapshot = await getDocs(q);
-            if (querySnapshot.empty) { alert("ไม่พบผู้ใช้งานนี้"); return; }
-
-            const targetRef = doc(window.db, "users", querySnapshot.docs[0].id);
-            await updateDoc(targetRef, { role: newRole });
-            alert(`อัปเดตสิทธิ์ของ ${email} เป็น [${newRole}] เรียบร้อยแล้ว!`);
-            renderPendingAuthors(); renderActiveAuthorList(); renderAdminManagementList();
+            const q = query(collection(window.db, "users"), where("email", "==", email));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const userDocRef = snap.docs[0].ref;
+                await runTransaction(window.db, async (transaction) => {
+                    const userSnap = await transaction.get(userDocRef);
+                    if (!userSnap.exists()) return;
+                    const uData = userSnap.data();
+                    const updatePayload = { role: newRole };
+                    if (newRole === 'customer' && uData.role === 'pending_author') {
+                        updatePayload.coins = Number(uData.coins || 0) + 349;
+                    }
+                    transaction.update(userDocRef, updatePayload);
+                });
+                alert(newRole === 'author' ? "อนุมัติสิทธิ์นักเขียนแล้ว!" : "ปฏิเสธคำขอและคืน 349 เหรียญ (หรือปลดสิทธิ์) เรียบร้อย");
+                renderPendingAuthors();
+                renderActiveAuthorList();
+            }
         } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
     };
 
     window.getAdminManagementListCloud = async function() {
+        const list = document.getElementById('adminManagementList');
+        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
+        const isSuperAdmin = currentUser && currentUser.role === 'super_admin';
+
+        list.innerHTML = `<p class="text-xs text-zinc-500 text-center py-4">กำลังโหลดรายชื่อ...</p>`;
         try {
-            const usersRef = collection(window.db, "users");
-            const querySnapshot = await getDocs(usersRef);
-            let container = document.getElementById('adminManagementList');
-            if (!container) return;
-            let html = '';
-            querySnapshot.forEach((docSnap) => {
-                let u = docSnap.data();
-                if (u.role === 'super_admin' || (u.role !== 'admin' && u.role !== 'customer')) return;
-                html += `
-                    <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
+            const snap = await getDocs(collection(window.db, "users"));
+            list.innerHTML = "";
+            snap.forEach((docSnap) => {
+                const u = docSnap.data();
+                if (u.role === 'super_admin') return;
+                let actionButtons = '';
+                if (isSuperAdmin) {
+                    if (u.role === 'admin') {
+                        actionButtons = `<button type="button" data-email="${escapeHtml(u.email)}" onclick="setAdminRole(this.getAttribute('data-email'), 'customer')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs cursor-pointer">ปลดสิทธิ์แอดมิน</button>`;
+                    } else {
+                        actionButtons = `<button type="button" data-email="${escapeHtml(u.email)}" onclick="setAdminRole(this.getAttribute('data-email'), 'admin')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs cursor-pointer">แต่งตั้งเป็นแอดมินทั่วไป</button>`;
+                    }
+                } else {
+                    actionButtons = `<span class="text-xs text-zinc-500 font-medium">${u.role === 'admin' ? '🛡️ แอดมินทั่วไป' : 'สมาชิกทั่วไป'}</span>`;
+                }
+
+                list.innerHTML += `
+                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center justify-between text-xs shadow-sm">
                         <div>
-                            <p class="font-bold">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p>
-                            <p class="text-zinc-400">สถานะ: ${u.role === 'admin' ? '🛡️ แอดมินทั่วไป' : '👤 สมาชิกทั่วไป'}</p>
+                            <p class="font-bold text-sm">${escapeHtml(u.name)} <span class="text-[10px] bg-zinc-800 px-2 py-0.5 rounded">${escapeHtml(u.role)}</span></p>
+                            <p class="text-zinc-500">${escapeHtml(u.email)}</p>
                         </div>
-                        <div>
-                            ${u.role === 'admin' ? `<button onclick="setAdminRole('${u.email}', 'customer')" class="bg-red-800 text-white px-3 py-1 rounded cursor-pointer">ถอดถอนแอดมิน</button>` : `<button onclick="setAdminRole('${u.email}', 'admin')" class="bg-blue-700 text-white px-3 py-1 rounded cursor-pointer">แต่งตั้งเป็นแอดมิน</button>`}
-                        </div>
+                        <div>${actionButtons}</div>
                     </div>
                 `;
             });
-            container.innerHTML = html || `<p class="text-xs text-zinc-500 text-center">ไม่มีบัญชีอื่นในระบบ</p>`;
-        } catch (error) { console.error("Error admin list:", error); }
+        } catch (error) { console.error(error); }
     };
 
-    window.setAdminRoleCloud = async function(email, newRole) { await window.updateAuthorRoleCloud(email, newRole); };
+    window.setAdminRoleCloud = async function(email, newRole) {
+        try {
+            const q = query(collection(window.db, "users"), where("email", "==", email));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                await updateDoc(snap.docs[0].ref, { role: newRole });
+                alert(newRole === 'admin' ? `แต่งตั้ง ${email} เป็นแอดมินทั่วไปเรียบร้อย!` : `ปลดสิทธิ์แอดมินของ ${email} เรียบร้อย!`);
+                renderAdminManagementList();
+            }
+        } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
+    };
 
     window.getActiveAuthorsCloud = async function() {
+        const list = document.getElementById('activeAuthorList');
+        list.innerHTML = `<p class="text-xs text-zinc-500 text-center py-4">กำลังโหลดรายชื่อนักเขียน...</p>`;
         try {
-            const usersRef = collection(window.db, "users");
-            const q = query(usersRef, where("role", "==", "author"));
-            const querySnapshot = await getDocs(q);
-            let container = document.getElementById('activeAuthorList');
-            if (!container) return;
-            let html = '';
-            querySnapshot.forEach((docSnap) => {
-                let u = docSnap.data();
-                html += `
-                    <div class="bg-zinc-900 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
-                        <div><p class="font-bold">${escapeHtml(u.name)} (${escapeHtml(u.email)})</p></div>
-                        <button onclick="revokeAuthor('${u.email}')" class="bg-red-800 hover:bg-red-900 text-white px-3 py-1 rounded cursor-pointer">ปลดสิทธิ์นักเขียน</button>
+            const q = query(collection(window.db, "users"), where("role", "==", "author"));
+            const snap = await getDocs(q);
+            list.innerHTML = "";
+            if (snap.empty) { list.innerHTML = `<div class="bg-zinc-900 p-4 rounded-xl text-center text-zinc-500 border border-zinc-800 text-xs">ยังไม่มีนักเขียน</div>`; return; }
+            snap.forEach((docSnap) => {
+                const u = docSnap.data();
+                list.innerHTML += `
+                    <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex items-center justify-between text-xs shadow-sm">
+                        <div><p class="font-bold text-sm">${escapeHtml(u.name)}</p><p class="text-zinc-500">${escapeHtml(u.email)}</p></div>
+                        <button type="button" data-email="${escapeHtml(u.email)}" onclick="revokeAuthor(this.getAttribute('data-email'))" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs cursor-pointer">ปลดสิทธิ์</button>
                     </div>
                 `;
             });
-            container.innerHTML = html || `<p class="text-xs text-zinc-500 text-center">ยังไม่มีนักเขียนในระบบ</p>`;
-        } catch (error) { console.error("Error active authors:", error); }
+        } catch (error) { console.error(error); }
     };
 
-    subscribeNovelsRealtime();
-    fetchNovelsFromFirestore();
     fetchSiteLogoFromCloud();
+    fetchNovelsFromFirestore();
 </script>
-
-
-<!-- =========================================================
-     RUBY VISUAL NOVEL - ระบบเสริมดูแลเว็บไซต์ (เพิ่มแยกจากโค้ดเดิม)
-     ไม่แก้ไขการทำงานของระบบอ่าน/เขียนนิยายเดิม
-========================================================= -->
-<script type="module">
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const waitForRubyFirebase = async (maxWaitMs = 15000) => {
-        const started = Date.now();
-        while ((!window.db || !window.auth) && Date.now() - started < maxWaitMs) {
-            await new Promise(resolve => setTimeout(resolve, 250));
-        }
-        if (!window.db) throw new Error("ยังไม่พบการเชื่อมต่อ Firebase");
-        return window.db;
-    };
-
-    const escapeText = (value) => String(value ?? "").replace(/[&<>"']/g, ch => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    }[ch]));
-
-    function addRubySystemTools() {
-        const adminView = document.getElementById("superAdminView");
-        if (!adminView || document.getElementById("rubySystemTools")) return;
-
-        const panel = document.createElement("section");
-        panel.id = "rubySystemTools";
-        panel.className = "theme-card bg-zinc-900 border border-zinc-800 rounded-xl p-4 mt-6 space-y-3";
-        panel.innerHTML = `
-            <div>
-                <h3 class="text-lg font-bold text-red-400">🧰 เครื่องมือดูแลระบบเพิ่มเติม</h3>
-                <p class="text-xs text-zinc-400 mt-1">ตรวจสอบการเชื่อมต่อและสำรองข้อมูลนิยาย โดยไม่เปลี่ยนแปลงข้อมูลต้นฉบับ</p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button id="rubyCloudCheckBtn" type="button" class="bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg px-3 py-2 text-sm">🔄 ตรวจสอบระบบคลาวด์</button>
-                <button id="rubyNovelBackupBtn" type="button" class="bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg px-3 py-2 text-sm">⬇️ สำรองข้อมูลนิยาย</button>
-            </div>
-            <div id="rubySystemStatus" class="bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-300" aria-live="polite">
-                ยังไม่ได้ตรวจสอบสถานะระบบ
-            </div>
-            <p class="text-[11px] text-zinc-500">ไฟล์สำรองนี้รวมเฉพาะข้อมูลในคอลเลกชันนิยาย (novels) ไม่รวมบัญชีผู้ใช้ รหัสผ่าน เหรียญ หรือข้อมูลการเงิน</p>
-        `;
-        adminView.appendChild(panel);
-
-        document.getElementById("rubyCloudCheckBtn").addEventListener("click", checkCloud);
-        document.getElementById("rubyNovelBackupBtn").addEventListener("click", exportNovelBackup);
-    }
-
-    async function checkCloud() {
-        const status = document.getElementById("rubySystemStatus");
-        const button = document.getElementById("rubyCloudCheckBtn");
-        if (!status || !button) return;
-        button.disabled = true;
-        button.textContent = "กำลังตรวจสอบ...";
-        status.textContent = "กำลังเชื่อมต่อ Firebase และตรวจสอบสิทธิ์อ่านข้อมูลนิยาย";
-        try {
-            const db = await waitForRubyFirebase();
-            const snapshot = await getDocs(collection(db, "novels"));
-            const online = navigator.onLine;
-            status.innerHTML = `
-                <p class="text-emerald-400 font-bold">✓ เชื่อมต่อ Firestore สำเร็จ</p>
-                <p class="mt-1">สถานะอินเทอร์เน็ต: ${online ? "ออนไลน์" : "ออฟไลน์ (อาจใช้ข้อมูลแคช)"}</p>
-                <p>จำนวนนิยายที่อ่านได้: ${snapshot.size.toLocaleString("th-TH")} เรื่อง</p>
-                <p class="text-zinc-500 mt-1">ตรวจสอบเมื่อ ${escapeText(new Date().toLocaleString("th-TH"))}</p>
-            `;
-        } catch (error) {
-            status.innerHTML = `
-                <p class="text-red-400 font-bold">✕ ตรวจสอบคลาวด์ไม่สำเร็จ</p>
-                <p class="mt-1 break-words">${escapeText(error?.message || error)}</p>
-                <p class="text-zinc-500 mt-1">โปรดตรวจสอบอินเทอร์เน็ต Firebase และ Firestore Rules</p>
-            `;
-        } finally {
-            button.disabled = false;
-            button.textContent = "🔄 ตรวจสอบระบบคลาวด์";
-        }
-    }
-
-    async function exportNovelBackup() {
-        const status = document.getElementById("rubySystemStatus");
-        const button = document.getElementById("rubyNovelBackupBtn");
-        if (!status || !button) return;
-        button.disabled = true;
-        button.textContent = "กำลังสำรอง...";
-        try {
-            const db = await waitForRubyFirebase();
-            const snapshot = await getDocs(collection(db, "novels"));
-            const novels = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-            const backup = {
-                app: "Ruby Visual Novel",
-                backupType: "novels-only",
-                createdAt: new Date().toISOString(),
-                totalNovels: novels.length,
-                novels
-            };
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
-            const url = URL.createObjectURL(blob);
-            const anchor = document.createElement("a");
-            anchor.href = url;
-            anchor.download = `ruby-visual-novel-backup-${new Date().toISOString().slice(0, 10)}.json`;
-            document.body.appendChild(anchor);
-            anchor.click();
-            anchor.remove();
-            setTimeout(() => URL.revokeObjectURL(url), 1500);
-            status.innerHTML = `
-                <p class="text-emerald-400 font-bold">✓ สำรองข้อมูลนิยายเรียบร้อย</p>
-                <p class="mt-1">สำรองได้ ${novels.length.toLocaleString("th-TH")} เรื่อง</p>
-                <p class="text-zinc-500 mt-1">ไฟล์ JSON ถูกดาวน์โหลดลงอุปกรณ์นี้แล้ว · ${escapeText(new Date().toLocaleString("th-TH"))}</p>
-            `;
-        } catch (error) {
-            status.innerHTML = `<p class="text-red-400 font-bold">สำรองข้อมูลไม่สำเร็จ</p><p class="mt-1 break-words">${escapeText(error?.message || error)}</p>`;
-        } finally {
-            button.disabled = false;
-            button.textContent = "⬇️ สำรองข้อมูลนิยาย";
-        }
-    }
-
-    // เครื่องมือจะปรากฏเฉพาะในหน้าจัดการระบบเดิม และไม่เพิ่มสิทธิ์ให้ผู้ใช้
-    const start = () => {
-        addRubySystemTools();
-        const target = document.getElementById("superAdminView");
-        if (target && !target.dataset.rubyToolsObserver) {
-            target.dataset.rubyToolsObserver = "1";
-            new MutationObserver(addRubySystemTools).observe(target, { childList: true, subtree: false });
-        }
-    };
-    if (document.readyState === "loading") {
-        document.addEventListener("DOMContentLoaded", start, { once: true });
-    } else {
-        start();
-    }
-</script>
-
 </body>
 </html>
