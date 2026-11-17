@@ -3384,11 +3384,17 @@
     // ==================== 1. ระบบประวัติเติมเหรียญบน Firestore (topups) ====================
     window.fetchTopupsFromFirestore = async function() {
         try {
-            const querySnapshot = await getDocs(collection(window.db, "topups"));
+            const user = window.auth.currentUser;
+            if (!user) return [];
+            const isSuperAdmin = !!(currentUserProfile && currentUserProfile.role === 'super_admin') ||
+                String(user.email || '').toLowerCase() === 'rubystudio0203@gmail.com';
+            // Rules อนุญาตให้ลูกค้าอ่านเฉพาะเอกสารของตนเอง
+            const topupQuery = isSuperAdmin
+                ? collection(window.db, "topups")
+                : query(collection(window.db, "topups"), where("uid", "==", user.uid));
+            const querySnapshot = await getDocs(topupQuery);
             const cloudTopups = [];
-            querySnapshot.forEach((docSnap) => {
-                cloudTopups.push({ id: docSnap.id, ...docSnap.data() });
-            });
+            querySnapshot.forEach((docSnap) => cloudTopups.push({ id: docSnap.id, ...docSnap.data() }));
             cloudTopups.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
             localStorage.setItem('mynovel_topups', JSON.stringify(cloudTopups));
             return cloudTopups;
@@ -3400,22 +3406,50 @@
 
     window.saveTopupRecordCloud = async function(record, refreshAfter = true) {
         try {
-            const docId = record.id || ("MN" + Date.now());
-            const payload = { ...record, id: docId, timestamp: record.timestamp || Date.now() };
-            await setDoc(doc(window.db, "topups", docId), payload, { merge: true });
+            const user = window.auth.currentUser;
+            if (!user || !record) return false;
+            const docId = String(record.id || ("MN" + Date.now()));
+            const topupRef = doc(window.db, "topups", docId);
+            const existingSnap = await getDoc(topupRef);
+            const isSuperAdmin = !!(currentUserProfile && currentUserProfile.role === 'super_admin') ||
+                String(user.email || '').toLowerCase() === 'rubystudio0203@gmail.com';
+
+            if (existingSnap.exists()) {
+                // Rules อนุญาตให้แก้ไขรายการเดิมได้เฉพาะ Super Admin
+                if (!isSuperAdmin) return false;
+                await setDoc(topupRef, { ...record, id: docId }, { merge: true });
+            } else {
+                // Rules อนุญาตให้สร้างได้เฉพาะคำขอเติมเหรียญ pending ของเจ้าของบัญชี
+                const payload = {
+                    id: docId,
+                    uid: user.uid,
+                    name: String(record.name || currentUserProfile?.name || ''),
+                    email: user.email || '',
+                    coins: 0,
+                    timestamp: Number(record.timestamp || Date.now()),
+                    time: String(record.time || new Date().toLocaleString('th-TH')),
+                    status: 'pending'
+                };
+                if (isSuperAdmin || record.uid !== user.uid || record.status !== 'pending' || Number(record.coins) !== 0) {
+                    // รายการเติม/ถอนที่สร้างโดยแอดมินเก็บไว้ใน local history เท่านั้น
+                    let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+                    topups = [{ ...record, id: docId }, ...topups.filter(item => item.id !== docId)];
+                    localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+                    return false;
+                }
+                await setDoc(topupRef, payload);
+            }
+
             if (refreshAfter) {
                 await window.fetchTopupsFromFirestore();
             } else {
                 let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
-                topups = [payload, ...topups.filter(item => item.id !== docId)];
+                topups = [{ ...record, id: docId }, ...topups.filter(item => item.id !== docId)];
                 localStorage.setItem('mynovel_topups', JSON.stringify(topups));
             }
             return true;
         } catch (error) {
             console.error("Error saving topup record:", error);
-            let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
-            topups = [record, ...topups.filter(item => item.id !== record.id)];
-            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
             return false;
         }
     };
@@ -3596,8 +3630,8 @@
             if (userSnap.exists()) {
                 currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, ...userSnap.data() };
             } else {
-                currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, name: firebaseUser.displayName || "ผู้ใช้", role: "customer", coins: 0, favorites: [], readingHistory: [] };
-                await setDoc(userDocRef, { uid: firebaseUser.uid, email: firebaseUser.email, name: currentUserProfile.name, role: "customer", coins: 0, favorites: [], readingHistory: [], createdAt: new Date().toISOString() }, { merge: true });
+                currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, name: firebaseUser.displayName || "ผู้ใช้", role: "customer", coins: 0, favorites: [], readingHistory: [], unlockedEpisodes: [] };
+                await setDoc(userDocRef, { uid: firebaseUser.uid, email: firebaseUser.email, name: currentUserProfile.name, role: "customer", coins: 0, favorites: [], readingHistory: [], unlockedEpisodes: [], createdAt: new Date().toISOString() });
             }
 
             // ซิงค์รายการโปรดและประวัติการอ่านระหว่างเครื่องกับ Cloud
@@ -3677,7 +3711,7 @@
             const userData = {
                 uid,
                 name,
-                email,
+                email: userCredential.user.email || email,
                 phone,
                 role: "customer",
                 coins: 0,
@@ -3855,9 +3889,19 @@
 
     window.triggerNovelUpdateNotificationCloud = async function(novelId, novelTitle, episodeTitle, episodeId) {
         try {
+            const user = window.auth.currentUser;
+            const isAdminClient = !!(currentUserProfile && ['admin', 'super_admin'].includes(currentUserProfile.role)) ||
+                String(user?.email || '').toLowerCase() === 'rubystudio0203@gmail.com';
+            // Rules อนุญาตให้สร้าง notifications จาก client เฉพาะ Admin เท่านั้น
+            // นักเขียนทั่วไปต้องใช้ Cloud Function (Admin SDK) เพื่อส่งแจ้งเตือนผู้ติดตาม
+            if (!user || !isAdminClient) {
+                console.info("ข้ามการสร้างแจ้งเตือนจาก client: ต้องส่งผ่าน Cloud Function สำหรับนักเขียนทั่วไป");
+                return false;
+            }
+
             const q = query(collection(window.db, "users"), where("favorites", "array-contains", novelId));
             const usersSnap = await getDocs(q);
-            if (usersSnap.empty) return;
+            if (usersSnap.empty) return true;
 
             const now = Date.now();
             const timeStr = new Date().toLocaleString('th-TH');
@@ -3869,28 +3913,27 @@
                 const u = userDoc.data();
                 const recipientEmail = String(u.email || '').toLowerCase().trim();
                 if (!recipientEmail || recipientEmail === senderEmail) return;
-                const notifId = `notif_${novelId}_${episodeId}_${userDoc.id}`;
+                const notifId = `notif_${novelId}_${episodeId}_${userDoc.id}_${now}`;
                 const notifRef = doc(window.db, "notifications", notifId);
                 batch.set(notifRef, {
                     id: notifId,
                     recipientUid: userDoc.id,
                     recipientEmail,
-                    novelId,
-                    episodeId,
+                    novelId: String(novelId),
+                    episodeId: String(episodeId),
                     title: `📚 อัปเดตตอนใหม่: ${novelTitle}`,
                     message: `มีตอนใหม่ "${episodeTitle}" ให้อ่านแล้ว!`,
                     timestamp: now,
                     time: timeStr,
                     isRead: false
-                }, { merge: true });
+                });
                 count++;
             });
-
-            if (count > 0) {
-                await batch.commit();
-            }
+            if (count > 0) await batch.commit();
+            return true;
         } catch (error) {
             console.error("Error sending update notifications:", error);
+            return false;
         }
     };
 
@@ -4203,13 +4246,20 @@
                     });
                 }
 
+                const novelRef = doc(window.db, "novels", novel.id);
+                const existingNovelSnap = await getDoc(novelRef);
+                const storedAuthorEmail = existingNovelSnap.exists()
+                    ? String(existingNovelSnap.data().authorEmail || '')
+                    : String(novel.authorEmail || getCurrentEmail() || '').toLowerCase().trim();
                 const cleanNovelDoc = {
                     ...novel,
+                    id: novel.id,
+                    authorEmail: storedAuthorEmail,
                     cover: coverUrl,
                     episodes: epSummaries,
                     episodeCount: epSummaries.filter(e => e.published !== false).length
                 };
-                await setDoc(doc(window.db, "novels", novel.id), cleanNovelDoc, { merge: true });
+                await setDoc(novelRef, cleanNovelDoc, { merge: true });
             }
             await fetchNovelsFromFirestore();
             return true;
@@ -4247,7 +4297,7 @@
             if (isSuperAdmin) {
                 unlockQuery = collection(window.db, "unlocks");
             } else {
-                const targetEmail = (currentUserProfile?.email || user.email || '').trim();
+                const targetEmail = String(currentUserProfile?.email || user.email || '').toLowerCase().trim();
                 unlockQuery = query(collection(window.db, "unlocks"), where("authorEmail", "==", targetEmail));
             }
 
@@ -4532,9 +4582,13 @@
                 unlockedList.push(episode.id);
 
                 transaction.update(userRef, {
-                    coins: updatedCoins,
-                    unlockedEpisodes: unlockedList
-                });
+    		coins: updatedCoins,
+    		unlockedEpisodes: unlockedList,
+
+    		// ใช้ตรวจสอบกับประวัติการปลดล็อกใน Firestore
+    		lastUnlockedNovelId: novel.id,
+    		lastUnlockedEpisodeId: episode.id
+		});
 
                 transaction.set(unlockRef, {
                     id: unlockDocId,
@@ -4571,7 +4625,9 @@
     window.requestAuthorCloud = async function(email, fee) {
         try {
             const user = window.auth.currentUser;
-            if (!user) return;
+            if (!user) return false;
+            // Firestore Rules กำหนดค่าธรรมเนียมคงที่ 349 เหรียญ
+            const applicationFee = 349;
             const userRef = doc(window.db, "users", user.uid);
             const newCoins = await runTransaction(window.db, async (transaction) => {
                 const snap = await transaction.get(userRef);
@@ -4579,8 +4635,8 @@
                 const data = snap.data();
                 if (data.role !== 'customer') throw new Error("สถานะบัญชีของคุณไม่สามารถส่งคำขอได้");
                 const currentCoins = Number(data.coins || 0);
-                if (currentCoins < fee) throw new Error("เหรียญไม่พอ");
-                const updated = currentCoins - fee;
+                if (currentCoins < applicationFee) throw new Error("เหรียญไม่พอ");
+                const updated = currentCoins - applicationFee;
                 transaction.update(userRef, {
                     coins: updated,
                     role: 'pending_author',
@@ -4593,7 +4649,11 @@
             localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
             updateUIByAuth();
             alert("ส่งคำขอเป็นนักเขียนสำเร็จ! ระบบหักเหรียญ 349 เหรียญแล้ว กรุณารอแอดมินตรวจสอบ");
-        } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
+            return true;
+        } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + error.message);
+            return false;
+        }
     };
 
     window.getPendingAuthorsCloud = async function() {
@@ -4630,23 +4690,28 @@
         try {
             const q = query(collection(window.db, "users"), where("email", "==", email));
             const snap = await getDocs(q);
-            if (!snap.empty) {
-                const userDocRef = snap.docs[0].ref;
-                await runTransaction(window.db, async (transaction) => {
-                    const userSnap = await transaction.get(userDocRef);
-                    if (!userSnap.exists()) return;
-                    const uData = userSnap.data();
-                    const updatePayload = { role: newRole };
-                    if (newRole === 'customer' && uData.role === 'pending_author') {
-                        updatePayload.coins = Number(uData.coins || 0) + 349;
-                    }
-                    transaction.update(userDocRef, updatePayload);
-                });
-                alert(newRole === 'author' ? "อนุมัติสิทธิ์นักเขียนแล้ว!" : "ปฏิเสธคำขอและคืน 349 เหรียญ (หรือปลดสิทธิ์) เรียบร้อย");
-                renderPendingAuthors();
-                renderActiveAuthorList();
+            if (snap.empty) return false;
+            const userDocRef = snap.docs[0].ref;
+            const userSnap = await getDoc(userDocRef);
+            if (!userSnap.exists()) return false;
+            const uData = userSnap.data();
+            const shouldRefund = newRole === 'customer' && uData.role === 'pending_author';
+
+            // Rules แยกสิทธิ์: เปลี่ยน role ได้เฉพาะ role; คืนเหรียญเป็นการ update coins แยกคำขอ
+            await updateDoc(userDocRef, { role: newRole });
+            if (shouldRefund) {
+                await updateDoc(userDocRef, { coins: Number(uData.coins || 0) + 349 });
             }
-        } catch (error) { alert("เกิดข้อผิดพลาด: " + error.message); }
+            alert(shouldRefund
+                ? "ปฏิเสธคำขอและคืน 349 เหรียญเรียบร้อย"
+                : (newRole === 'author' ? "อนุมัติสิทธิ์นักเขียนแล้ว!" : "ปรับสถานะบัญชีเรียบร้อย"));
+            renderPendingAuthors();
+            renderActiveAuthorList();
+            return true;
+        } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + error.message);
+            return false;
+        }
     };
 
     window.getAdminManagementListCloud = async function() {
