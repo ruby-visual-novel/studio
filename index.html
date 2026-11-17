@@ -1334,21 +1334,34 @@
         }
     }
 
-    async function addDirectTopupCoins(email) {
+    async function addDirectTopupCoins(email, isDeduct = false) {
         const input = document.getElementById('directCoins_' + encodeURIComponent(email));
         const coins = Number.parseInt(input?.value, 10);
         if (!Number.isInteger(coins) || coins <= 0) {
             alert("กรุณากรอกจำนวนเหรียญให้ถูกต้อง มากกว่า 0");
             return;
         }
-        if (!confirm(`ยืนยันเติม ${coins} เหรียญ ให้บัญชี ${email} ใช่หรือไม่?`)) return;
+        const delta = isDeduct ? -coins : coins;
+        const actionLabel = isDeduct ? `ดึงเหรียญกลับ ${coins} เหรียญ (หากใช้ไปแล้ว ยอดจะติดลบ)` : `เติม ${coins} เหรียญ`;
+        if (!confirm(`ยืนยัน${actionLabel} ให้บัญชี ${email} ใช่หรือไม่?`)) return;
         if (!window.addCoinsToCustomerCloud) {
             alert("ระบบเติมเหรียญยังไม่พร้อม กรุณาลองใหม่");
             return;
         }
-        const success = await window.addCoinsToCustomerCloud(email, coins);
-        if (success) {
-            alert(`เติม ${coins} เหรียญให้ ${email} เรียบร้อยแล้ว`);
+        const res = await window.addCoinsToCustomerCloud(email, delta);
+        if (res && res.success) {
+            let topups = JSON.parse(localStorage.getItem('mynovel_topups')) || [];
+            topups.unshift({
+                id: "MN" + Date.now(),
+                name: email,
+                email: email,
+                coins: delta,
+                time: new Date().toLocaleString('th-TH'),
+                status: isDeduct ? 'reverted' : 'approved'
+            });
+            localStorage.setItem('mynovel_topups', JSON.stringify(topups));
+
+            alert(`${isDeduct ? 'ดึงเหรียญกลับ' : 'เติมเหรียญ'}สำเร็จ! ยอดคงเหลือปัจจุบันของ ${email} คือ ${res.newCoins} เหรียญ`);
             renderPendingTopups();
             renderSuperAdminTopupHistory();
         }
@@ -1371,8 +1384,8 @@
                     <p class="text-zinc-500 mt-0.5">เวลา: ${t.time}</p>
                 </div>
                 <div class="text-right flex items-center gap-3">
-                    <span class="font-semibold ${t.status === 'approved' ? 'text-emerald-400' : (t.status === 'rejected' ? 'text-red-400' : 'text-amber-400')}">
-                        ${t.status === 'approved' ? '✅ เติมสำเร็จ (' + t.coins + ' เหรียญ)' : (t.status === 'rejected' ? '❌ ถูกปฏิเสธ' : '⏳ กำลังรอตรวจสอบ')}
+                    <span class="font-semibold ${t.status === 'approved' ? 'text-emerald-400' : (t.status === 'reverted' ? 'text-orange-400' : (t.status === 'rejected' ? 'text-red-400' : 'text-amber-400'))}">
+                        ${t.status === 'approved' ? '✅ เติมสำเร็จ (+' + Math.abs(t.coins) + ' เหรียญ)' : (t.status === 'reverted' ? '↩️ ดึงเหรียญกลับแล้ว (-' + Math.abs(t.coins) + ' เหรียญ)' : (t.status === 'rejected' ? '❌ ถูกปฏิเสธ' : '⏳ กำลังรอตรวจสอบ'))}
                     </span>
                     ${t.status === 'approved' ? `<button onclick="revertTopup('${t.id}')" class="bg-red-800 hover:bg-red-900 text-white px-2 py-1 rounded text-[11px] cursor-pointer">ดึงเงินกลับ</button>` : ''}
                 </div>
@@ -1401,9 +1414,10 @@
         let coinsToAdd = parseInt(inputVal);
         if (isNaN(coinsToAdd) || coinsToAdd <= 0) { alert("กรุณากรอกจำนวนเหรียญให้ถูกต้อง มากกว่า 0"); return; }
 
+        let res = null;
         if (window.updateUserCoinsCloud) {
-            const success = await window.updateUserCoinsCloud(t.email, coinsToAdd);
-            if (!success) return;
+            res = await window.updateUserCoinsCloud(t.email, coinsToAdd);
+            if (!res || !res.success) return;
         }
 
         t.coins = coinsToAdd;
@@ -1412,7 +1426,7 @@
 
         renderPendingTopups();
         renderSuperAdminTopupHistory();
-        alert(`เติม ${coinsToAdd} เหรียญ ให้ ${t.email} สำเร็จ!`);
+        alert(`เติม ${coinsToAdd} เหรียญ ให้ ${t.email} สำเร็จ! (ยอดคงเหลือของลูกค้า: ${res ? res.newCoins : coinsToAdd} เหรียญ)`);
     }
 
     async function revertTopup(topupId) {
@@ -1420,19 +1434,20 @@
         let t = topups.find(item => item.id === topupId);
         if (!t || t.status !== 'approved') return;
 
-        let coinsToDeduct = t.coins || 0;
-        if (!confirm(`คุณต้องการดึงเงิน/เหรียญกลับจำนวน ${coinsToDeduct} เหรียญ จากบัญชี (${t.email}) ใช่หรือไม่?`)) return;
+        let coinsToDeduct = Math.abs(t.coins || 0);
+        if (!confirm(`คุณต้องการดึงเงิน/เหรียญกลับจำนวน ${coinsToDeduct} เหรียญ จากบัญชี (${t.email}) ใช่หรือไม่? (หากลูกค้าใช้เหรียญไปแล้ว ยอดจะติดลบ -${coinsToDeduct})`)) return;
 
+        let res = null;
         if (window.updateUserCoinsCloud) {
-            const success = await window.updateUserCoinsCloud(t.email, -coinsToDeduct);
-            if (!success) return;
+            res = await window.updateUserCoinsCloud(t.email, -coinsToDeduct);
+            if (!res || !res.success) return;
         }
-        t.status = 'pending';
-        t.coins = 0;
+        t.status = 'reverted';
+        t.coins = -coinsToDeduct;
         localStorage.setItem('mynovel_topups', JSON.stringify(topups));
         renderPendingTopups();
         renderSuperAdminTopupHistory();
-        alert("ดึงเงินกลับเรียบร้อยแล้ว");
+        alert(`ดึงเหรียญกลับ ${coinsToDeduct} เหรียญ เรียบร้อยแล้ว! (ยอดคงเหลือปัจจุบันของลูกค้า: ${res ? res.newCoins : 0} เหรียญ)`);
     }
 
     function renderPendingAuthors() { if (window.getPendingAuthorsCloud) window.getPendingAuthorsCloud(); }
@@ -2473,7 +2488,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs, query, where, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, getDocs, query, where, updateDoc, runTransaction, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCdCcrt5dbB9CyPl3jHrbAPExnBez0qYJ0",
@@ -2511,7 +2526,13 @@
         return true;
     };
 
+    let unsubscribeUserSnapshot = null;
+
     onAuthStateChanged(window.auth, async (firebaseUser) => {
+        if (unsubscribeUserSnapshot) {
+            unsubscribeUserSnapshot();
+            unsubscribeUserSnapshot = null;
+        }
         if (firebaseUser) {
             const userDocRef = doc(window.db, "users", firebaseUser.uid);
             const userSnap = await getDoc(userDocRef);
@@ -2519,9 +2540,19 @@
                 currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, ...userSnap.data() };
             } else {
                 currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, name: firebaseUser.displayName || "ผู้ใช้", role: "customer", coins: 0 };
+                await setDoc(userDocRef, { uid: firebaseUser.uid, email: firebaseUser.email, name: currentUserProfile.name, role: "customer", coins: 0, createdAt: new Date().toISOString() }, { merge: true });
             }
             localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
             if (typeof rememberAccount === 'function') rememberAccount(currentUserProfile);
+
+            // ฟังการเปลี่ยนแปลงยอดเหรียญและสิทธิ์แบบ Real-time ทันทีที่แอดมินเติมหรือดึงเหรียญกลับ
+            unsubscribeUserSnapshot = onSnapshot(userDocRef, (snap) => {
+                if (snap.exists()) {
+                    currentUserProfile = { uid: firebaseUser.uid, email: firebaseUser.email, ...snap.data() };
+                    localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
+                    if (typeof updateUIByAuth === 'function') updateUIByAuth();
+                }
+            });
         } else {
             currentUserProfile = null;
             localStorage.removeItem('mynovel_currentUser');
@@ -2681,38 +2712,48 @@
     window.updateUserCoinsCloud = async function(email, amount) {
         try {
             const targetEmail = String(email || '').trim().toLowerCase();
+            const delta = Number(amount);
+            if (!targetEmail || !Number.isFinite(delta) || delta === 0) {
+                alert("ข้อมูลอีเมลหรือจำนวนเหรียญไม่ถูกต้อง");
+                return false;
+            }
+
             const usersSnapshot = await getDocs(collection(window.db, "users"));
-            let targetDocSnap = null;
+            let targetDocId = null;
             usersSnapshot.forEach((docSnap) => {
                 if (String(docSnap.data().email || '').trim().toLowerCase() === targetEmail) {
-                    targetDocSnap = docSnap;
+                    targetDocId = docSnap.id;
                 }
             });
 
-            if (!targetDocSnap) {
-                alert(`⚠️ ไม่พบบัญชีผู้ใช้ที่ใช้อีเมล "${email}" ในฐานข้อมูลคลาวด์ (เหรียญจึงยังไม่ถูกเติม)`);
+            if (!targetDocId) {
+                alert(`⚠️ ไม่พบบัญชีผู้ใช้ที่ใช้อีเมล "${email}" ในฐานข้อมูลคลาวด์ (เหรียญจึงยังไม่ถูกอัปเดต)`);
                 return false;
             }
 
-            const targetRef = doc(window.db, "users", targetDocSnap.id);
-            const currentCoins = Number(targetDocSnap.data().coins || 0);
-            const newCoins = Math.max(0, currentCoins + Number(amount));
+            const targetRef = doc(window.db, "users", targetDocId);
+            const finalCoins = await runTransaction(window.db, async (transaction) => {
+                const freshSnap = await transaction.get(targetRef);
+                if (!freshSnap.exists()) throw new Error("ไม่พบเอกสารผู้ใช้ในระบบ");
+                const currentCoins = Number(freshSnap.data().coins || 0);
+                // อนุญาตให้ยอดเหรียญติดลบได้ (เช่น กรณีเติมผิดแล้วดึงคืนหลังจากลูกค้าใช้เหรียญไปแล้ว)
+                const newCoins = currentCoins + delta;
+                if (!Number.isSafeInteger(newCoins)) {
+                    throw new Error("จำนวนเหรียญเกินขอบเขตที่ระบบรองรับ");
+                }
+                transaction.update(targetRef, { coins: newCoins });
+                return newCoins;
+            });
 
-            if (!Number.isSafeInteger(newCoins)) {
-                alert("จำนวนเหรียญเกินขอบเขตที่ระบบรองรับ");
-                return false;
-            }
-
-            await updateDoc(targetRef, { coins: newCoins });
             if (currentUserProfile && String(currentUserProfile.email || '').trim().toLowerCase() === targetEmail) {
-                currentUserProfile.coins = newCoins;
+                currentUserProfile.coins = finalCoins;
                 localStorage.setItem('mynovel_currentUser', JSON.stringify(currentUserProfile));
                 updateUIByAuth();
             }
-            return true;
+            return { success: true, newCoins: finalCoins };
         } catch (error) {
             console.error("Error updating user coins:", error);
-            alert("❌ เติมเหรียญลงฐานข้อมูลไม่สำเร็จ: " + (error.message || error));
+            alert("❌ อัปเดตเหรียญลงฐานข้อมูลไม่สำเร็จ: " + (error.message || error));
             return false;
         }
     };
@@ -2745,11 +2786,12 @@
                 <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                     <div>
                         <p class="font-bold text-zinc-100">${escapeHtml(user.name)} <span class="text-zinc-400 font-normal">(${escapeHtml(user.email)})</span></p>
-                        <p class="text-amber-400 mt-1">ยอดปัจจุบัน: ${user.coins.toLocaleString('th-TH')} เหรียญ</p>
+                        <p class="${user.coins < 0 ? 'text-red-400 font-bold' : 'text-amber-400'} mt-1">ยอดปัจจุบัน: ${user.coins.toLocaleString('th-TH')} เหรียญ</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="number" id="directCoins_${encodeURIComponent(user.email)}" min="1" step="1" placeholder="จำนวนเหรียญ" class="w-28 px-2.5 py-1.5 border border-zinc-700 bg-zinc-900 text-white rounded-lg text-xs">
-                        <button onclick="addDirectTopupCoins('${String(user.email).replace(/\\/g, '\\\\\\\\').replace(/'/g, "\\\\'")}')" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium">เติมเหรียญ</button>
+                        <button onclick="addDirectTopupCoins('${String(user.email).replace(/\\/g, '\\\\\\\\').replace(/'/g, "\\\\'")}', false)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer">เติมเหรียญ</button>
+                        <button onclick="addDirectTopupCoins('${String(user.email).replace(/\\/g, '\\\\\\\\').replace(/'/g, "\\\\'")}', true)" class="bg-red-700 hover:bg-red-800 text-white px-3 py-1.5 rounded-lg font-medium cursor-pointer" title="ดึงเหรียญกลับ (ยอดติดลบได้)">ดึงกลับ</button>
                     </div>
                 </div>
             `).join('') + (matches.length > 30 ? `<p class="text-[11px] text-zinc-500 text-center">พบ ${matches.length} บัญชี แสดง 30 รายการแรก กรุณาพิมพ์คำค้นหาให้เจาะจงขึ้น</p>` : '');
