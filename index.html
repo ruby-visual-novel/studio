@@ -2876,7 +2876,17 @@
                     }
                 }
             } else {
-                const newNovel = { id: "novel_" + Date.now(), title, category, author: currentUser ? currentUser.name : 'ผู้แต่ง', authorEmail: currentUser ? currentUser.email : '', cover, description, published, episodes: [] };
+                const newNovel = {
+                    id: "novel_" + Date.now(),
+                    title,
+                    category,
+                    author: currentUser ? currentUser.name : 'ผู้แต่ง',
+                    authorEmail: currentUser ? String(currentUser.email || '').toLowerCase().trim() : '',
+                    cover,
+                    description,
+                    published,
+                    episodes: []
+                };
                 savedOk = await saveNovelsData(newNovel);
             }
             if (savedOk) {
@@ -3328,8 +3338,8 @@
     window.db = getFirestore(app);
 
     // ==================== 0. ระบบอัปโหลดรูปขึ้น Cloudinary (Cloud Name: pi7oqz3c) ====================
-    const CLOUDINARY_CLOUD_NAME = "pi7oqz3c";
-    const CLOUDINARY_UPLOAD_PRESET = "ruby_unsigned"; // ตั้งค่า Unsigned Upload Preset ใน Cloudinary เป็นชื่อนี้ (หรือเปลี่ยนให้ตรงกับที่ตั้งไว้)
+    	const CLOUD_NAME = "pi7oqz3c";
+	const UPLOAD_PRESET = "ml_default"; // ตั้งค่า Unsigned Upload Preset ใน Cloudinary เป็นชื่อนี้ (หรือเปลี่ยนให้ตรงกับที่ตั้งไว้)
 
     window.uploadImageToFirebaseStorage = async function(dataUrl, folder = 'novel_images') {
         if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
@@ -3422,7 +3432,7 @@
         }
     };
 
-    window.saveTopupRecordCloud = async function(record, refreshAfter = true) {
+   window.saveTopupRecordCloud = async function(record, refreshAfter = true) {
         try {
             const user = window.auth.currentUser;
             if (!user || !record) return false;
