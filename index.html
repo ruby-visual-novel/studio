@@ -492,6 +492,33 @@
                 </div>
             </div>
             <div>
+                <!-- กล่องแนะนำการฝากรูป Google Drive สำหรับนักเขียน -->
+                <div class="bg-blue-500/10 border border-blue-500/30 rounded-xl p-3.5 mb-3 text-xs">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-2">
+                            <span class="text-base">💡</span>
+                            <div>
+                                <p class="font-semibold text-blue-300">เคล็ดลับ: ตอนที่มีรูปฉากเยอะ (10 รูปขึ้นไป) แนะนำให้ใช้ลิงก์จาก Google Drive</p>
+                                <p class="text-zinc-300 text-[11px] mt-0.5">ช่วยให้โหลดฉากได้รวดเร็วไม่สะดุด และไม่เปลืองพื้นที่ระบบ สามารถนำลิงก์แชร์จาก Google Drive มาวางในช่องลิงก์รูปได้ทันที</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="document.getElementById('gdrive-guide-box').classList.toggle('hidden')" 
+                            class="shrink-0 bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 border border-blue-400/30 px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer">
+                            📖 ดูวิธีทำ
+                        </button>
+                    </div>
+
+                    <div id="gdrive-guide-box" class="hidden mt-2.5 pt-2.5 border-t border-blue-500/20 text-[11px] text-zinc-300 space-y-1">
+                        <p class="font-semibold text-white">ขั้นตอนการนำลิงก์รูปจาก Google Drive มาใช้:</p>
+                        <ol class="list-decimal list-inside space-y-1 text-zinc-300">
+                            <li>อัปโหลดรูปฉากทั้งหมดเข้าโฟลเดอร์ใน <a href="https://drive.google.com" target="_blank" class="text-blue-400 underline">Google Drive</a></li>
+                            <li>กดปุ่ม <b>⋮ (3 จุด)</b> ที่ไฟล์รูป (หรือที่ตัวโฟลเดอร์) เลือก <b>แชร์ (Share)</b> ➔ <b>แชร์ (Share)</b></li>
+                            <li>ตรงหัวข้อ <i>การเข้าถึงทั่วไป</i> เปลี่ยนจาก "จำกัด" เป็น <b>ทุกคนที่มีลิงก์ (Anyone with the link)</b></li>
+                            <li>กด <b>คัดลอกลิงก์ (Copy link)</b> แล้วนำมา <b>วาง (Paste)</b> ลงในช่องใส่ลิงก์รูปภาพด้านล่างได้เลย (ระบบจะแปลงเป็นรูปให้อัตโนมัติ)</li>
+                        </ol>
+                    </div>
+                </div>
+
                 <div class="flex items-center justify-between mb-2">
                     <span class="font-bold text-sm">ลำดับฉาก (Scenes)</span>
                     <button type="button" onclick="addSceneBlock()" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">+ เพิ่มฉากใหม่</button>
@@ -4143,7 +4170,22 @@
 
     window.fetchUnlocksFromFirestore = async function() {
         try {
-            const querySnapshot = await getDocs(collection(window.db, "unlocks"));
+            const user = window.auth.currentUser;
+            if (!user) return [];
+            const isSuperAdmin = currentUserProfile && (
+                currentUserProfile.role === 'super_admin' ||
+                (user.email && user.email.toLowerCase() === 'rubystudio0203@gmail.com')
+            );
+
+            let unlockQuery;
+            if (isSuperAdmin) {
+                unlockQuery = collection(window.db, "unlocks");
+            } else {
+                const targetEmail = (currentUserProfile?.email || user.email || '').trim();
+                unlockQuery = query(collection(window.db, "unlocks"), where("authorEmail", "==", targetEmail));
+            }
+
+            const querySnapshot = await getDocs(unlockQuery);
             const cloudUnlocks = [];
             const sixMonthsAgo = Date.now() - (6 * 30 * 24 * 60 * 60 * 1000);
             querySnapshot.forEach((docSnap) => {
@@ -4250,7 +4292,22 @@
 
     window.fetchWithdrawalsFromFirestore = async function() {
         try {
-            const querySnapshot = await getDocs(collection(window.db, "withdrawals"));
+            const user = window.auth.currentUser;
+            if (!user) return [];
+            const isSuperAdmin = currentUserProfile && (
+                currentUserProfile.role === 'super_admin' ||
+                (user.email && user.email.toLowerCase() === 'rubystudio0203@gmail.com')
+            );
+
+            let withdrawalQuery;
+            if (isSuperAdmin) {
+                withdrawalQuery = collection(window.db, "withdrawals");
+            } else {
+                const targetEmail = (currentUserProfile?.email || user.email || '').toLowerCase().trim();
+                withdrawalQuery = query(collection(window.db, "withdrawals"), where("authorEmail", "==", targetEmail));
+            }
+
+            const querySnapshot = await getDocs(withdrawalQuery);
             const cloudWithdrawals = [];
             querySnapshot.forEach((docSnap) => {
                 cloudWithdrawals.push({ id: docSnap.id, ...docSnap.data() });
