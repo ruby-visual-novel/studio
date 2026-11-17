@@ -3092,10 +3092,15 @@
                         <div class="flex flex-wrap justify-between items-center gap-2 pt-1">
                             <div class="flex items-center gap-1.5">
                                 <span class="text-[11px] text-zinc-400">เมื่ออ่านฉากนี้จบ:</span>
-                                <select onchange="updateTempScene(${i}, 'nextScene', this.value)" class="border border-zinc-700 bg-zinc-900 text-emerald-400 rounded px-2 py-1 text-xs">
-                                    <option value="" ${!scene.nextScene && scene.nextScene !== '0' ? 'selected' : ''}>ไปฉากถัดไปตามลำดับ (ฉากที่ ${i + 2})</option>
-                                    <option value="END" ${scene.nextScene === 'END' ? 'selected' : ''}>🏁 จบตอนทันที</option>
-                                    ${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.nextScene === String(idx) ? 'selected' : ''}>ข้ามไปฉากที่ ${idx + 1}</option>`).join('')}
+                                <select ${scene.hasChoice ? 'disabled' : ''} onchange="updateTempScene(${i}, 'nextScene', this.value)" class="border border-zinc-700 bg-zinc-900 rounded px-2 py-1 text-xs ${scene.hasChoice ? 'opacity-50 cursor-not-allowed text-zinc-500' : 'text-emerald-400'}">
+                                    ${scene.hasChoice 
+                                        ? `<option value="" selected>🔒 ล็อก (ควบคุมเส้นทางตามช้อยส์ที่เลือก)</option>` 
+                                        : `
+                                            <option value="" ${!scene.nextScene && scene.nextScene !== '0' ? 'selected' : ''}>ไปฉากถัดไปตามลำดับ (ฉากที่ ${i + 2})</option>
+                                            <option value="END" ${scene.nextScene === 'END' ? 'selected' : ''}>🏁 จบตอนทันที</option>
+                                            ${tempScenes.map((_, idx) => `<option value="${idx}" ${scene.nextScene === String(idx) ? 'selected' : ''}>ข้ามไปฉากที่ ${idx + 1}</option>`).join('')}
+                                          `
+                                    }
                                 </select>
                             </div>
                             <div class="text-[10px] text-zinc-500">จำนวน: <span id="charCount_${i}">${charCount}</span> ตัวอักษร | <span id="wordCount_${i}">${wordCount}</span> คำ</div>
@@ -3238,6 +3243,9 @@
     }
     function toggleSceneChoice(i, checked) { 
         tempScenes[i].hasChoice = checked; 
+        if (checked) {
+            tempScenes[i].nextScene = ''; // ล้างค่าข้ามฉากอัตโนมัติเมื่อเปิดใช้ช้อยส์
+        }
         renderSceneBlocks(); 
         triggerAutosave();
     }
