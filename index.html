@@ -136,15 +136,18 @@
 
 <!-- หน้าอ่านนิยาย -->
 <div id="readerView" class="hidden flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
-    <div class="flex items-center justify-between mb-2">
-        <button onclick="backToDetail()" class="text-sm text-red-500 font-medium flex items-center hover:underline">← กลับไปหน้ารายชื่อตอน</button>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-2">
+            <button id="readerBackBtn" onclick="backToDetail()" class="text-sm text-red-500 font-medium flex items-center hover:underline cursor-pointer">← กลับไปหน้ารายชื่อตอน</button>
+            <button id="exitPreviewBtn" onclick="exitPreviewMode()" class="hidden bg-amber-600 hover:bg-amber-700 text-white text-xs px-3 py-1 rounded-lg font-bold shadow cursor-pointer">✕ ออกจากโหมดพรีวิว (กลับไปแก้ไขตอน)</button>
+        </div>
         <div class="flex items-center gap-2">
             <span id="readerEpisodeTitle" class="text-xs font-semibold text-zinc-400"></span>
             <button type="button" id="bgmMuteToggleBtn" onclick="toggleBgmMute()" class="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-medium cursor-pointer" title="เปิด/ปิดเสียงเพลงประกอบ">🔊 เสียงเปิด</button>
             <div class="flex items-center bg-zinc-800 rounded-lg p-0.5 border border-zinc-700 text-xs">
-                <button onclick="changeReaderFontSize('sm')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold" title="ตัวอักษรเล็ก">A-</button>
-                <button onclick="changeReaderFontSize('base')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold" title="ตัวอักษรปกติ">A</button>
-                <button onclick="changeReaderFontSize('lg')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold" title="ตัวอักษรใหญ่">A+</button>
+                <button type="button" id="fontSizeBtn_sm" onclick="changeReaderFontSize('sm')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold cursor-pointer" title="ตัวอักษรเล็ก">A-</button>
+                <button type="button" id="fontSizeBtn_base" onclick="changeReaderFontSize('base')" class="px-2 py-0.5 rounded bg-red-800 text-white font-bold cursor-pointer" title="ตัวอักษรปกติ">A</button>
+                <button type="button" id="fontSizeBtn_lg" onclick="changeReaderFontSize('lg')" class="px-2 py-0.5 rounded hover:bg-zinc-700 text-zinc-300 font-bold cursor-pointer" title="ตัวอักษรใหญ่">A+</button>
             </div>
         </div>
     </div>
@@ -159,22 +162,42 @@
         <div id="sceneBg" onclick="handleSceneBgTap(event)" class="flex-1 bg-cover bg-center flex items-end justify-center pb-8 relative transition-all duration-500 cursor-pointer select-none">
             <div class="text-center text-white bg-zinc-950/85 px-6 py-4 rounded-xl backdrop-blur-md max-w-[92%] border border-white/15 shadow-2xl">
                 <span id="charName" class="font-bold text-red-400 block text-left text-sm mb-1.5"></span> 
-                <span id="dialogueText" class="text-base sm:text-lg block text-left leading-relaxed transition-all"></span>
+                <span id="dialogueText" class="text-base block text-left leading-relaxed transition-all"></span>
             </div>
         </div>
 
         <!-- กล่องช้อยส์ -->
         <div id="choiceBox" class="hidden p-4 bg-zinc-900/98 flex flex-col gap-2 absolute inset-x-0 bottom-0 z-10 border-t border-zinc-700 max-h-[280px] overflow-y-auto">
-            <p class="text-xs text-red-300 text-center font-medium">-- เลือกคำตอบเพื่อดำเนินเรื่องต่อ --</p>
+            <div class="flex items-center justify-between">
+                <button type="button" id="choicePrevSceneBtn" onclick="prevScene()" class="hidden text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-2.5 py-1 rounded-lg border border-zinc-700 cursor-pointer">⬅ ฉากก่อนหน้า</button>
+                <p class="text-xs text-red-300 text-center font-medium flex-1">-- เลือกคำตอบเพื่อดำเนินเรื่องต่อ --</p>
+            </div>
             <button id="choiceBtn1" onclick="makeChoice(1)" class="bg-red-800 hover:bg-red-900 text-white text-sm sm:text-base py-3 px-4 rounded-xl text-left shadow transition font-medium"></button>
             <button id="choiceBtn2" onclick="makeChoice(2)" class="bg-red-800 hover:bg-red-900 text-white text-sm sm:text-base py-3 px-4 rounded-xl text-left shadow transition font-medium"></button>
             <button id="choiceBtn3" onclick="makeChoice(3)" class="hidden bg-red-800 hover:bg-red-900 text-white text-sm sm:text-base py-3 px-4 rounded-xl text-left shadow transition font-medium"></button>
             <button id="choiceBtn4" onclick="makeChoice(4)" class="hidden bg-red-800 hover:bg-red-900 text-white text-sm sm:text-base py-3 px-4 rounded-xl text-left shadow transition font-medium"></button>
         </div>
 
-        <div id="nextBtnContainer" class="p-4 bg-zinc-900 text-center border-t border-zinc-800 flex justify-between items-center">
-            <button onclick="toggleEpisodeLike()" id="readerLikeBtn" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer">🤍 ถูกใจตอน (<span id="readerLikeCount">0</span>)</button>
-            <button onclick="nextScene()" class="text-sm sm:text-base text-red-400 hover:text-red-300 font-bold tracking-wide">คลิกเพื่ออ่านต่อ ➔</button>
+        <!-- หน้าต่างเมื่ออ่านจบตอน (มีปุ่มกดไปตอนต่อไปถ้ามี) -->
+        <div id="episodeEndOverlay" class="hidden absolute inset-0 bg-black/85 backdrop-blur-sm z-20 flex items-center justify-center p-6">
+            <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl space-y-4">
+                <div class="text-3xl">🎬</div>
+                <h3 class="text-lg font-bold text-white">จบตอนแล้ว!</h3>
+                <p id="episodeEndDesc" class="text-xs text-zinc-400">คุณอ่านตอนนี้จบเรียบร้อยแล้ว</p>
+                <div class="flex flex-col gap-2.5 pt-2">
+                    <button type="button" id="readNextEpisodeBtn" onclick="goToNextEpisode()" class="w-full bg-red-700 hover:bg-red-800 text-white py-3 px-4 rounded-xl font-bold text-sm shadow-lg cursor-pointer transition">📖 อ่านตอนต่อไป</button>
+                    <button type="button" onclick="prevSceneFromEndOverlay()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-200 py-2.5 px-4 rounded-xl text-xs font-medium border border-zinc-700 cursor-pointer">⬅ ย้อนกลับไปฉากก่อนหน้า</button>
+                    <button type="button" onclick="backToDetail()" class="w-full bg-zinc-950 hover:bg-zinc-800 text-zinc-400 py-2.5 px-4 rounded-xl text-xs font-medium border border-zinc-800 cursor-pointer">📚 กลับไปหน้าสารบัญตอน</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="nextBtnContainer" class="p-4 bg-zinc-900 text-center border-t border-zinc-800 flex justify-between items-center gap-2">
+            <div class="flex items-center gap-2">
+                <button type="button" id="prevSceneBtn" onclick="prevScene()" class="hidden text-xs sm:text-sm bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg border border-zinc-700 font-medium cursor-pointer">⬅ ฉากก่อนหน้า</button>
+                <button onclick="toggleEpisodeLike()" id="readerLikeBtn" class="text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer">🤍 ถูกใจตอน (<span id="readerLikeCount">0</span>)</button>
+            </div>
+            <button onclick="nextScene()" class="text-sm sm:text-base text-red-400 hover:text-red-300 font-bold tracking-wide cursor-pointer">คลิกเพื่ออ่านต่อ ➔</button>
         </div>
     </div>
 
@@ -1955,13 +1978,68 @@
     let activeEpisodeId = null;
     let currentSceneIndex = 0;
     let currentScenes = [];
+    let sceneHistory = [];
+    let isPreviewMode = false;
+    let nextAvailableEpisodeId = null;
+    let currentReaderFontSize = localStorage.getItem('mynovel_readerFontSize') || 'base';
 
     function changeReaderFontSize(size) {
+        currentReaderFontSize = size;
+        localStorage.setItem('mynovel_readerFontSize', size);
         const textEl = document.getElementById('dialogueText');
-        textEl.classList.remove('text-sm', 'text-base', 'text-lg', 'text-xl');
-        if (size === 'sm') textEl.classList.add('text-sm', 'sm:text-base');
-        else if (size === 'base') textEl.classList.add('text-base', 'sm:text-lg');
-        else if (size === 'lg') textEl.classList.add('text-lg', 'sm:text-xl');
+        const charEl = document.getElementById('charName');
+        if (textEl) {
+            textEl.classList.remove('text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl', 'text-2xl', 'sm:text-base', 'sm:text-lg', 'sm:text-xl');
+            textEl.style.fontSize = '';
+            if (size === 'sm') {
+                textEl.classList.add('text-sm');
+                textEl.style.fontSize = '0.875rem';
+            } else if (size === 'lg') {
+                textEl.classList.add('text-xl');
+                textEl.style.fontSize = '1.25rem';
+            } else {
+                textEl.classList.add('text-base');
+                textEl.style.fontSize = '1rem';
+            }
+        }
+        if (charEl) {
+            charEl.classList.remove('text-xs', 'text-sm', 'text-base', 'text-lg');
+            if (size === 'sm') charEl.classList.add('text-xs');
+            else if (size === 'lg') charEl.classList.add('text-base');
+            else charEl.classList.add('text-sm');
+        }
+        ['sm', 'base', 'lg'].forEach(s => {
+            const btn = document.getElementById('fontSizeBtn_' + s);
+            if (!btn) return;
+            if (s === size) {
+                btn.classList.add('bg-red-800', 'text-white');
+                btn.classList.remove('text-zinc-300', 'hover:bg-zinc-700');
+            } else {
+                btn.classList.remove('bg-red-800', 'text-white');
+                btn.classList.add('text-zinc-300', 'hover:bg-zinc-700');
+            }
+        });
+    }
+
+    function updatePreviewModeUI() {
+        const exitBtn = document.getElementById('exitPreviewBtn');
+        const backBtn = document.getElementById('readerBackBtn');
+        if (exitBtn) exitBtn.classList.toggle('hidden', !isPreviewMode);
+        if (backBtn) {
+            backBtn.innerText = isPreviewMode ? '← กลับไปแก้ไขตอน' : '← กลับไปหน้ารายชื่อตอน';
+        }
+    }
+
+    function exitPreviewMode() {
+        playSceneBgm('');
+        isPreviewMode = false;
+        updatePreviewModeUI();
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay) endOverlay.classList.add('hidden');
+        hideAllViews();
+        document.getElementById('adminStudioView').classList.remove('hidden');
+        renderAdminNovels();
+        document.getElementById('episodeEditorModal').classList.remove('hidden');
     }
 
     let unlockingEpisodeInProgress = false;
@@ -2011,14 +2089,21 @@
             return;
         }
 
+        isPreviewMode = false;
+        updatePreviewModeUI();
         activeNovelId = novelId;
         activeEpisodeId = epId;
         currentScenes = episode.scenes;
         currentSceneIndex = Math.min(Math.max(0, Number(resumeIndex) || 0), currentScenes.length - 1);
+        sceneHistory = [];
+        for (let i = 0; i < currentSceneIndex; i++) {
+            sceneHistory.push(i);
+        }
         document.getElementById('readerEpisodeTitle').innerText = episode.title;
         
         hideAllViews();
         document.getElementById('readerView').classList.remove('hidden');
+        changeReaderFontSize(currentReaderFontSize);
         renderCurrentScene();
         renderEpisodeLikesAndComments(novelId, epId);
     }
@@ -2649,14 +2734,106 @@
 
     function backToDetail() { 
         playSceneBgm('');
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay) endOverlay.classList.add('hidden');
+        if (isPreviewMode) {
+            exitPreviewMode();
+            return;
+        }
         if (activeNovelId) openNovelDetail(activeNovelId); else goHome(); 
+    }
+
+    function updatePrevSceneButtons() {
+        const canGoBack = sceneHistory.length > 0 || currentSceneIndex > 0;
+        const prevBtn = document.getElementById('prevSceneBtn');
+        const choicePrevBtn = document.getElementById('choicePrevSceneBtn');
+        if (prevBtn) prevBtn.classList.toggle('hidden', !canGoBack);
+        if (choicePrevBtn) choicePrevBtn.classList.toggle('hidden', !canGoBack);
+    }
+
+    function prevScene() {
+        unlockAndResumeBgmOnGesture();
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay) endOverlay.classList.add('hidden');
+        if (sceneHistory.length > 0) {
+            currentSceneIndex = sceneHistory.pop();
+            renderCurrentScene();
+        } else if (currentSceneIndex > 0) {
+            currentSceneIndex--;
+            renderCurrentScene();
+        }
+    }
+
+    function prevSceneFromEndOverlay() {
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay) endOverlay.classList.add('hidden');
+        renderCurrentScene();
+    }
+
+    function findNextEpisodeForActiveNovel() {
+        if (!activeNovelId || !activeEpisodeId) return null;
+        const novel = getNovels().find(n => n.id === activeNovelId);
+        if (!novel || !Array.isArray(novel.episodes)) return null;
+        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
+        const isAdmin = currentUser && (currentUser.role === 'super_admin' || currentUser.role === 'admin');
+        const isOwner = currentUser && novel.authorEmail && currentUser.email && (currentUser.email.toLowerCase() === novel.authorEmail.toLowerCase());
+        const isAuthorOrAdmin = currentUser && (isAdmin || isOwner);
+        const visibleEps = novel.episodes.filter(ep => ep.published !== false || isAuthorOrAdmin);
+        const curIdx = visibleEps.findIndex(ep => ep.id === activeEpisodeId);
+        if (curIdx >= 0 && curIdx + 1 < visibleEps.length) {
+            return visibleEps[curIdx + 1];
+        }
+        return null;
+    }
+
+    function finishEpisodeOrShowNext() {
+        if (isPreviewMode) {
+            alert("จบการพรีวิวตอนนี้แล้ว!");
+            exitPreviewMode();
+            return;
+        }
+        const nextEp = findNextEpisodeForActiveNovel();
+        if (!nextEp) {
+            alert("จบตอนแล้ว! (ไม่มีตอนถัดไป)");
+            backToDetail();
+            return;
+        }
+        nextAvailableEpisodeId = nextEp.id;
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        const endDesc = document.getElementById('episodeEndDesc');
+        const nextBtn = document.getElementById('readNextEpisodeBtn');
+        if (endDesc) {
+            endDesc.innerText = `ตอนถัดไป: "${nextEp.title}"`;
+        }
+        if (nextBtn) {
+            const priceLabel = (Number(nextEp.price) || 0) > 0 ? ` (🪙 ${nextEp.price} เหรียญ)` : ' (อ่านฟรี)';
+            nextBtn.innerText = `📖 อ่านตอนต่อไป: ${nextEp.title}${priceLabel}`;
+        }
+        if (endOverlay) {
+            endOverlay.classList.remove('hidden');
+        }
+    }
+
+    function goToNextEpisode() {
+        if (!activeNovelId || !nextAvailableEpisodeId) {
+            backToDetail();
+            return;
+        }
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay) endOverlay.classList.add('hidden');
+        startReadingEpisode(activeNovelId, nextAvailableEpisodeId, 0, false);
     }
 
     let sceneRenderTicket = 0;
     function renderCurrentScene() {
-        recordReadingProgress();
+        if (!isPreviewMode) {
+            recordReadingProgress();
+        }
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay) endOverlay.classList.add('hidden');
+
         const scene = currentScenes[currentSceneIndex];
-        if (!scene) { alert("จบตอนแล้ว!"); backToDetail(); return; }
+        if (!scene) { finishEpisodeOrShowNext(); return; }
         
         const fallbackBg = 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80';
         const rawBg = normalizeImageUrl(scene.bg);
@@ -2683,6 +2860,7 @@
         document.getElementById('dialogueText').innerText = scene.text;
         
         playSceneBgm(scene.bgm);
+        updatePrevSceneButtons();
 
         if (scene.hasChoice) {
             document.getElementById('choiceBox').classList.remove('hidden');
@@ -2706,6 +2884,8 @@
     function handleSceneBgTap(e) {
         const choiceBox = document.getElementById('choiceBox');
         if (choiceBox && !choiceBox.classList.contains('hidden')) return;
+        const endOverlay = document.getElementById('episodeEndOverlay');
+        if (endOverlay && !endOverlay.classList.contains('hidden')) return;
         nextScene();
     }
 
@@ -2714,29 +2894,39 @@
         const currentScene = currentScenes[currentSceneIndex];
 
         if (currentScene && currentScene.nextScene === 'END') {
-            alert("จบตอนแล้ว!");
-            backToDetail();
+            finishEpisodeOrShowNext();
             return;
         }
 
         if (currentScene && currentScene.nextScene !== undefined && currentScene.nextScene !== '') {
             const target = parseInt(currentScene.nextScene, 10);
             if (!isNaN(target) && target >= 0 && target < currentScenes.length) {
+                sceneHistory.push(currentSceneIndex);
                 currentSceneIndex = target;
                 renderCurrentScene();
                 return;
             }
         }
 
-        currentSceneIndex++;
-        if (currentSceneIndex < currentScenes.length) renderCurrentScene();
-        else { alert("จบตอนแล้ว!"); backToDetail(); }
+        if (currentSceneIndex + 1 < currentScenes.length) {
+            sceneHistory.push(currentSceneIndex);
+            currentSceneIndex++;
+            renderCurrentScene();
+        } else {
+            finishEpisodeOrShowNext();
+        }
     }
     function makeChoice(num) {
         unlockAndResumeBgmOnGesture();
         const scene = currentScenes[currentSceneIndex];
         const target = parseInt(scene[`choice${num}Next`]);
-        if (!isNaN(target) && target >= 0 && target < currentScenes.length) { currentSceneIndex = target; renderCurrentScene(); } else { nextScene(); }
+        if (!isNaN(target) && target >= 0 && target < currentScenes.length) {
+            sceneHistory.push(currentSceneIndex);
+            currentSceneIndex = target;
+            renderCurrentScene();
+        } else {
+            nextScene();
+        }
     }
 
     function openAdminStudio() {
@@ -2893,17 +3083,20 @@
                     }
                 }
             } else {
+
                 const newNovel = {
-                    id: "novel_" + Date.now(),
-                    title,
-                    category,
-                    author: currentUser ? currentUser.name : 'ผู้แต่ง',
-                    authorEmail: currentUser ? String(currentUser.email || '').toLowerCase().trim() : '',
-                    cover,
-                    description,
-                    published,
-                    episodes: []
-                };
+    		   id: "novel_" + Date.now(),
+    		   title,
+    		   category,
+    		   author: currentUser ? currentUser.name : 'ผู้แต่ง',
+    		   authorUid: currentUser ? (currentUser.uid || '') : '',
+    		   authorEmail: currentUser ? String(currentUser.email || '').toLowerCase().trim() : '',
+    		   cover,
+    		   description,
+    		   published,
+    		   episodes: []
+		};
+
                 savedOk = await saveNovelsData(newNovel);
             }
             if (savedOk) {
@@ -3004,13 +3197,17 @@
             alert("กรุณาเพิ่มเนื้อหาอย่างน้อย 1 ฉากก่อนพรีวิว");
             return;
         }
+        isPreviewMode = true;
+        updatePreviewModeUI();
         currentScenes = tempScenes;
         currentSceneIndex = 0;
+        sceneHistory = [];
         const titleInput = document.getElementById('epTitleInput').value || "พรีวิวตอน";
         document.getElementById('readerEpisodeTitle').innerText = `[โหมดพรีวิว] ${titleInput}`;
         closeModal('episodeEditorModal');
         hideAllViews();
         document.getElementById('readerView').classList.remove('hidden');
+        changeReaderFontSize(currentReaderFontSize);
         renderCurrentScene();
     }
 
@@ -3306,16 +3503,33 @@
     }
 
     async function deleteEpisode(novelId, epId) {
-        if (!confirm("ลบตอนนี้ใช่หรือไม่?")) return;
+        const currentUser = JSON.parse(localStorage.getItem('mynovel_currentUser'));
+        const isSuperAdmin = currentUser && currentUser.role === 'super_admin';
         let novels = getNovels();
         let n = novels.find(item => item.id === novelId);
-        if (n) { 
-            if (window.deleteEpisodeCloud) {
-                if (await window.deleteEpisodeCloud(novelId, epId)) { renderAdminNovels(); renderHomeNovels(); }
+        if (!n) return;
+        let ep = (n.episodes || []).find(item => item.id === epId);
+
+        if (!isSuperAdmin && ep && Number(ep.price || 0) > 0) {
+            let hasPurchases = false;
+            if (window.checkEpisodeHasUnlocksCloud) {
+                hasPurchases = await window.checkEpisodeHasUnlocksCloud(novelId, epId);
             } else {
-                n.episodes = n.episodes.filter(ep => ep.id !== epId); 
-                if (await saveNovelsData(n)) { renderAdminNovels(); renderHomeNovels(); }
+                const localUnlocks = JSON.parse(localStorage.getItem('mynovel_unlocks')) || [];
+                hasPurchases = localUnlocks.some(u => u.novelId === novelId && u.episodeId === epId);
             }
+            if (hasPurchases) {
+                alert("⛔ ไม่สามารถลบตอนนี้ได้ เนื่องจากเป็นตอนติดเหรียญที่มีลูกค้าซื้อไปอ่านแล้ว (มีเฉพาะแอดมินสูงสุดเท่านั้นที่ลบได้)");
+                return;
+            }
+        }
+
+        if (!confirm("ลบตอนนี้ใช่หรือไม่?")) return;
+        if (window.deleteEpisodeCloud) {
+            if (await window.deleteEpisodeCloud(novelId, epId)) { renderAdminNovels(); renderHomeNovels(); }
+        } else {
+            n.episodes = n.episodes.filter(ep => ep.id !== epId); 
+            if (await saveNovelsData(n)) { renderAdminNovels(); renderHomeNovels(); }
         }
     }
 
@@ -4259,10 +4473,37 @@
         }
     };
 
+    window.checkEpisodeHasUnlocksCloud = async function(novelId, epId) {
+        try {
+            const q = query(
+                collection(window.db, "unlocks"),
+                where("novelId", "==", novelId),
+                where("episodeId", "==", epId)
+            );
+            const snap = await getDocs(q);
+            return !snap.empty;
+        } catch (error) {
+            console.error("Error checking episode unlocks:", error);
+            const localUnlocks = JSON.parse(localStorage.getItem('mynovel_unlocks')) || [];
+            return localUnlocks.some(u => u.novelId === novelId && u.episodeId === epId);
+        }
+    };
+
     window.deleteEpisodeCloud = async function(novelId, epId) {
         try {
             const novel = novelsCache.find(n => n.id === novelId);
             if (!novel) return false;
+            const targetEp = (novel.episodes || []).find(ep => ep.id === epId);
+            const user = window.auth.currentUser;
+            const isSuperAdmin = !!(currentUserProfile && currentUserProfile.role === 'super_admin') ||
+                String(user?.email || '').toLowerCase() === 'rubystudio0203@gmail.com';
+            if (!isSuperAdmin && targetEp && Number(targetEp.price || 0) > 0) {
+                const hasPurchases = await window.checkEpisodeHasUnlocksCloud(novelId, epId);
+                if (hasPurchases) {
+                    alert("⛔ ไม่สามารถลบตอนนี้ได้ เนื่องจากเป็นตอนติดเหรียญที่มีลูกค้าซื้อไปอ่านแล้ว (มีเฉพาะแอดมินสูงสุดเท่านั้นที่ลบได้)");
+                    return false;
+                }
+            }
             const epSummaries = (novel.episodes || [])
                 .filter(ep => ep.id !== epId)
                 .map(ep => ({
